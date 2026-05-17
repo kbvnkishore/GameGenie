@@ -1,93 +1,67 @@
-﻿# AWS Bedrock Agent Version Control
+﻿# GameGenie
 
-This project provides a structured approach to version controlling AWS Bedrock agents using Infrastructure as Code (IaC) and Git.
+AI-powered gaming platform for kids that brings their game ideas to life instantly.
+
+## Overview
+
+GameGenie is an interactive AI platform where kids can:
+- **Solve Problems**: Engage with fun challenges and puzzles
+- **Play Games**: Access a library of pre-selected games
+- **Create Games**: Turn their creative ideas into playable games with AI assistance
+- **Share & Discover**: Add their creations to the game library
+
+## How It Works
+
+1. **Problem Mode**: Kids encounter a challenge or puzzle
+2. **Game Selection**: Choose from pre-selected games to play
+3. **Idea Generation**: Write cool game ideas in the problem
+4. **AI Creation**: GameGenie processes the idea and creates the game
+5. **Instant Play**: Get a link to play the newly created game
+6. **Library Update**: New game gets added to the game library
 
 ## Project Structure
 
 ```
-├── infrastructure/          # Infrastructure as Code definitions
-│   ├── cdk/                # AWS CDK implementation
-│   ├── terraform/          # Terraform modules
-│   └── cloudformation/     # CloudFormation templates
-├── agents/                 # Agent configurations
-│   ├── customer-support/   # Example agent
-│   ├── data-analyst/       # Another example agent
-│   └── shared/            # Shared resources
+├── agents/                 # AI agent configurations
+│   └── game-genie/        # Main GameGenie agent
+├── infrastructure/        # Infrastructure as Code
 ├── scripts/               # Deployment and utility scripts
 ├── tests/                 # Test configurations
-├── docs/                  # Documentation
-└── .github/              # GitHub workflows
+└── docs/                  # Documentation
 ```
 
 ## Getting Started
 
 ### Prerequisites
-- AWS CLI configured with appropriate permissions
-- Node.js (for CDK) or Terraform (depending on your IaC choice)
+- AWS CLI configured with Bedrock permissions
+- Node.js 18+
 - Git
 
 ### Quick Start
-1. Choose your IaC tool (CDK, Terraform, or CloudFormation)
-2. Configure your agent in `agents/your-agent-name/`
-3. Deploy using the provided scripts
+
+1. Clone the repository
+2. Configure your AWS credentials
+3. Deploy the agent:
+   ```bash
+   npm install
+   npm run deploy:dev
+   ```
 
 ## Features
-- Version controlled agent configurations
-- Environment separation (dev, staging, prod)
-- Automated testing and deployment
-- Prompt template management
-- Knowledge base versioning
 
-## GitHub Setup
+- **AI-Powered Game Creation**: Turn text ideas into playable games
+- **Kid-Friendly Interface**: Safe, intuitive design
+- **Instant Feedback**: Real-time game generation
+- **Growing Library**: Games created by kids get added to the library
+- **Problem-Based Learning**: Educational challenges with gaming rewards
 
-### 1. Create a New Repository
-Go to [GitHub](https://github.com/new) and create a new repository.
+## Tech Stack
 
-### 2. Connect to Remote
-```bash
-# Add your GitHub repository as remote
-git remote add origin https://github.com/YOUR_USERNAME/REPO_NAME.git
-
-# Push to GitHub
-git branch -M main
-git push -u origin main
-```
-
-### 3. Set Up GitHub Secrets
-In your GitHub repository settings, add these secrets:
-- `AWS_ACCESS_KEY_ID_DEV`
-- `AWS_SECRET_ACCESS_KEY_DEV`
-- `AWS_ACCESS_KEY_ID_PROD`
-- `AWS_SECRET_ACCESS_KEY_PROD`
-- `CONFIG_BUCKET_DEV`
-- `CONFIG_BUCKET_PROD`
-
-## Environment Configuration
-
-### Development
-```bash
-cp .env.dev .env
-# Edit .env with your values
-```
-
-### Production
-```bash
-cp .env.prod .env
-# Edit .env with your values
-```
-
-## Deployment
-
-### Manual Deployment
-```bash
-npm run deploy:dev      # Deploy to development
-npm run deploy:staging  # Deploy to staging
-npm run deploy:prod     # Deploy to production
-```
-
-### CI/CD
-Changes to `main` branch automatically deploy to production.
-Changes to `develop` branch automatically deploy to staging.
+- **Backend**: AWS Bedrock (Claude models)
+- **Infrastructure**: CloudFormation
+- **Deployment**: Node.js scripts
+- **Version Control**: Git + GitHub Actions
 
 ## License
-MIT
+
+MIT License

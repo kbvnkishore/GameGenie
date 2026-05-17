@@ -1,5 +1,5 @@
-﻿AWSTemplateFormatVersion: '2010-09-09'
-Description: 'AWS Bedrock Agent with version control'
+﻿AWSTemplateFormatVersion: "2010-09-09"
+Description: "GameGenie - AWS Bedrock Agent for Kids Gaming Platform"
 
 Parameters:
   Environment:
@@ -14,7 +14,7 @@ Parameters:
   AgentName:
     Type: String
     Description: Name of the Bedrock agent
-    Default: CustomerSupportAgent
+    Default: GameGenie
   
   FoundationModel:
     Type: String
@@ -22,54 +22,55 @@ Parameters:
     Default: anthropic.claude-3-sonnet-20240229-v1:0
 
 Resources:
-  BedrockAgentRole:
+  GameGenieAgentRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${AgentName}-${Environment}-Role'
+      RoleName: !Sub "${AgentName}-${Environment}-Role"
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
               Service: bedrock.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        - PolicyName: BedrockAgentPolicy
+        - PolicyName: GameGenieAgentPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: "2012-10-17"
             Statement:
               - Effect: Allow
                 Action:
                   - bedrock:InvokeModel
                   - bedrock:Retrieve
-                Resource: '*'
+                Resource: "*"
               - Effect: Allow
                 Action:
                   - s3:GetObject
                   - s3:ListBucket
                 Resource:
-                  - !Sub 'arn:aws:s3:::${KnowledgeBaseBucket}'
-                  - !Sub 'arn:aws:s3:::${KnowledgeBaseBucket}/*'
+                  - !Sub "arn:aws:s3:::${ConfigBucket}"
+                  - !Sub "arn:aws:s3:::${ConfigBucket}/*"
 
-  BedrockAgent:
+  GameGenieAgent:
     Type: AWS::Bedrock::Agent
     Properties:
       AgentName: !Ref AgentName
       FoundationModel: !Ref FoundationModel
       Instruction: !Sub |
-        You are a helpful customer support agent. 
+        You are GameGenie, a friendly AI gaming assistant for kids. 
         Environment: ${Environment}
         Version: 1.0.0
-      IdleSessionTTLInSeconds: 600
-      RoleArn: !GetAtt BedrockAgentRole.Arn
+        Your role is to help kids solve problems, play games, and turn their creative ideas into playable games!
+      IdleSessionTTLInSeconds: 900
+      RoleArn: !GetAtt GameGenieAgentRole.Arn
 
 Outputs:
   AgentId:
-    Description: ID of the created Bedrock agent
-    Value: !Ref BedrockAgent
+    Description: ID of the created GameGenie Bedrock agent
+    Value: !Ref GameGenieAgent
   AgentArn:
-    Description: ARN of the created Bedrock agent
-    Value: !GetAtt BedrockAgent.Arn
+    Description: ARN of the created GameGenie Bedrock agent
+    Value: !GetAtt GameGenieAgent.Arn
   AgentRoleArn:
     Description: ARN of the IAM role for the agent
-    Value: !GetAtt BedrockAgentRole.Arn
+    Value: !GetAtt GameGenieAgentRole.Arn
