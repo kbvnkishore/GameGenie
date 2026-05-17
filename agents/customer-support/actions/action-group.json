@@ -1,0 +1,55 @@
+﻿{
+  "actionGroupName": "CustomerSupportActions",
+  "description": "Actions for customer support agent",
+  "parentActionGroupSignature": "AMAZON.UserInput",
+  "actionGroupExecutor": {
+    "lambda": {
+      "lambdaArn": "arn:aws:lambda:us-east-1:123456789012:function:customer-support-actions"
+    }
+  },
+  "apiSchema": {
+    "s3": {
+      "s3BucketName": "my-agent-schemas",
+      "s3ObjectKey": "customer-support-openapi.yaml"
+    }
+  },
+  "actions": [
+    {
+      "actionName": "CreateSupportTicket",
+      "description": "Create a new support ticket for the customer",
+      "parameters": [
+        {
+          "name": "customerId",
+          "type": "string",
+          "description": "Customer identifier",
+          "required": true
+        },
+        {
+          "name": "issueDescription",
+          "type": "string",
+          "description": "Description of the issue",
+          "required": true
+        },
+        {
+          "name": "priority",
+          "type": "string",
+          "description": "Ticket priority (low, medium, high, critical)",
+          "required": false,
+          "default": "medium"
+        }
+      ]
+    },
+    {
+      "actionName": "CheckOrderStatus",
+      "description": "Check the status of a customer order",
+      "parameters": [
+        {
+          "name": "orderId",
+          "type": "string",
+          "description": "Order identifier",
+          "required": true
+        }
+      ]
+    }
+  ]
+}
