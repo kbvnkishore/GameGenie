@@ -1,4 +1,4 @@
-﻿AWSTemplateFormatVersion: "2010-09-09"
+AWSTemplateFormatVersion: "2010-09-09"
 Description: "GameGenie - AWS Bedrock Agent for Kids Gaming Platform"
 
 Parameters:
@@ -10,16 +10,24 @@ Parameters:
       - dev
       - staging
       - prod
-  
+
   AgentName:
     Type: String
     Description: Name of the Bedrock agent
     Default: GameGenie
-  
+
   FoundationModel:
     Type: String
-    Description: Foundation model to use
+    Description: Foundation model ARN or ID to use
     Default: anthropic.claude-3-sonnet-20240229-v1:0
+
+  ConfigBucket:
+    Type: String
+    Description: S3 bucket name for storing agent configurations and knowledge base
+    Default: ""
+
+Conditions:
+  HasConfigBucket: !Not [!Equals [!Ref ConfigBucket, ""]]
 
 Resources:
   GameGenieAgentRole:
@@ -33,44 +41,88 @@ Resources:
             Principal:
               Service: bedrock.amazonaws.com
             Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnLike:
+                aws:SourceArn: !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:agent/*"
       Policies:
         - PolicyName: GameGenieAgentPolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
+              # Allow invoking foundation models
               - Effect: Allow
                 Action:
                   - bedrock:InvokeModel
-                  - bedrock:Retrieve
-                Resource: "*"
+                  - bedrock:GetFoundationModel
+                Resource:
+                  - !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/${FoundationModel}"
+              # Allow Bedrock agent to retrieve from knowledge base (if used)
               - Effect: Allow
                 Action:
-                  - s3:GetObject
-                  - s3:ListBucket
-                Resource:
-                  - !Sub "arn:aws:s3:::${ConfigBucket}"
-                  - !Sub "arn:aws:s3:::${ConfigBucket}/*"
+                  - bedrock:Retrieve
+                  - bedrock:RetrieveAndGenerate
+                Resource: "*"
+              # Allow reading from S3 config bucket (only if bucket is provided)
+              - !If
+                - HasConfigBucket
+                - Effect: Allow
+                  Action:
+                    - s3:GetObject
+                    - s3:ListBucket
+                  Resource:
+                    - !Sub "arn:aws:s3:::${ConfigBucket}"
+                    - !Sub "arn:aws:s3:::${ConfigBucket}/*"
+                - !Ref AWS::NoValue
 
   GameGenieAgent:
     Type: AWS::Bedrock::Agent
     Properties:
-      AgentName: !Ref AgentName
+      AgentName: !Sub "${AgentName}-${Environment}"
       FoundationModel: !Ref FoundationModel
       Instruction: !Sub |
-        You are GameGenie, a friendly AI gaming assistant for kids. 
-        Environment: ${Environment}
-        Version: 1.0.0
+        You are GameGenie, a friendly AI gaming assistant for kids.
         Your role is to help kids solve problems, play games, and turn their creative ideas into playable games!
+        Always keep content age-appropriate, safe, and fun.
+        Environment: ${Environment}
       IdleSessionTTLInSeconds: 900
-      RoleArn: !GetAtt GameGenieAgentRole.Arn
+      AgentResourceRoleArn: !GetAtt GameGenieAgentRole.Arn
+      AutoPrepare: true
+      Tags:
+        Environment: !Ref Environment
+        Project: GameGenie
+
+  # Agent alias for stable invocation endpoint
+  GameGenieAgentAlias:
+    Type: AWS::Bedrock::AgentAlias
+    Properties:
+      AgentId: !Ref GameGenieAgent
+      AgentAliasName: !Sub "${Environment}-latest"
+      Description: !Sub "GameGenie agent alias for ${Environment} environment"
+    DependsOn: GameGenieAgent
 
 Outputs:
   AgentId:
     Description: ID of the created GameGenie Bedrock agent
     Value: !Ref GameGenieAgent
+    Export:
+      Name: !Sub "${AWS::StackName}-AgentId"
+
   AgentArn:
     Description: ARN of the created GameGenie Bedrock agent
-    Value: !GetAtt GameGenieAgent.Arn
+    Value: !GetAtt GameGenieAgent.AgentArn
+    Export:
+      Name: !Sub "${AWS::StackName}-AgentArn"
+
+  AgentAliasId:
+    Description: Alias ID for stable invocation
+    Value: !GetAtt GameGenieAgentAlias.AgentAliasId
+    Export:
+      Name: !Sub "${AWS::StackName}-AgentAliasId"
+
   AgentRoleArn:
     Description: ARN of the IAM role for the agent
     Value: !GetAtt GameGenieAgentRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-AgentRoleArn"
