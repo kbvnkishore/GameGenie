@@ -1,10 +1,14 @@
 # Product
 
-This is a new project workspace. No application code has been added yet.
+GameGenie is an AI-powered kids gaming portal (ages 5-13).
 
-Update this file once the product's purpose, target users, and core functionality are defined.
+## Core Features
+1. Problem of the Day - daily challenge on homepage
+2. Game Library - pre-selected games to play instantly
+3. Idea Box - kids type an idea, AI creates a game
+4. Kid-Created Games - appear in the library after creation
 
-## Suggested sections to add
-- What the product does and who it's for
-- Key features and user-facing capabilities
-- Any domain-specific terminology or concepts
+## Principles
+- Age-appropriate and safe at all times
+- Simple language, encouraging tone
+- No personal information collected

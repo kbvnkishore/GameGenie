@@ -1,27 +1,17 @@
 # Tech Stack
 
-No application code has been added to this workspace yet. Update this file once the project's technology choices are established.
+- Runtime: Node.js v24, npm v11
+- Backend: Express 4, dotenv, cors, uuid
+- Frontend: Vanilla HTML/CSS/JS, Google Fonts (Nunito)
+- AWS: Bedrock Claude 3 Sonnet, CloudFormation, S3
+- SDK: @aws-sdk/client-bedrock-agent-runtime, @aws-sdk/client-bedrock-agent
+- Dev: nodemon
 
-## Suggested sections to add
-- Language(s) and runtime versions
-- Frameworks and major libraries
-- Build tooling and package manager
-- Database and infrastructure
-
-## Common Commands
-
-Add commands here as the project is set up, for example:
-
-```bash
-# Install dependencies
-# <command>
-
-# Build
-# <command>
-
-# Run tests
-# <command>
-
-# Start dev server
-# <command>
-```
+## Commands
+`ash
+npm install        # install deps
+npm start          # run server
+npm run dev        # run with nodemon
+npm test           # validate configs
+npm run deploy:dev # deploy to AWS dev
+`

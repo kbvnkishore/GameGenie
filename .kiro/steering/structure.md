@@ -1,19 +1,19 @@
 # Project Structure
 
-No application code has been added to this workspace yet. Update this file once the project structure is established.
+agents/            Bedrock agent configs (game-genie, kids-game-portal)
+server/            Express backend
+  routes/          API route handlers
+  services/        mockAgentService + bedrockAgentService
+public/            Static frontend (HTML/CSS/JS)
+infrastructure/    CloudFormation templates
+scripts/           test-agent.js, deploy.js, agent-utils.js
+tests/             Jest tests
+docs/              ARCHITECTURE.md, LOCAL_DEVELOPMENT.md
+.env.local         local mock mode
+.env.dev           dev AWS
+.env.prod          prod AWS
 
-## Current Layout
-
-```
-.kiro/          # Kiro AI assistant configuration
-  steering/     # Steering documents (this folder)
-  specs/        # Feature and bugfix specs (created as needed)
-  skills/       # Custom agent skills
-  powers/       # Installed Kiro powers
-```
-
-## Suggested sections to add once code exists
-- Source directory layout and what lives where
-- Naming conventions for files, folders, and modules
-- Where tests live relative to source files
-- Any monorepo or multi-package structure details
+## Conventions
+- Agent dirs: kebab-case
+- JS files: camelCase
+- Env files: .env.{environment}
