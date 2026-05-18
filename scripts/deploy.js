@@ -1,10 +1,10 @@
-const { execSync } = require("child_process");
+﻿const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
 // Parse command line arguments
 const environment = process.argv[2] || "dev";
-const agentName = process.argv[3] || "game-genie";  // Fixed: was "customer-support"
+const agentName = process.argv[3] || "game-genie";  
 
 console.log(`Deploying agent: ${agentName} to environment: ${environment}`);
 

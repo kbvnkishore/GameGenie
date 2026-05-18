@@ -1,135 +1,139 @@
-﻿const fs = require("fs");
+const fs = require("fs");
 const path = require("path");
 
-console.log("Testing GameGenie Agent Configuration...\n");
+const AGENTS = [
+  {
+    name: "game-genie",
+    dir:  "agents/game-genie",
+    expectedActionGroup: "GameGenieActions",
+    expectedActions: ["GenerateGame", "AddGameToLibrary", "GetGameLibrary"]
+  },
+  {
+    name: "kids-game-portal",
+    dir:  "agents/kids-game-portal",
+    expectedActionGroup: "KidsGamePortalActions",
+    expectedActions: ["GetProblemOfTheDay", "GetFeaturedGames", "SubmitGameIdea"]
+  }
+];
 
-// Test 1: Check agent configuration file exists
-function testAgentConfig() {
-  const configPath = path.join(__dirname, "..", "agents", "game-genie", "agent-config.json");
-  
+let allPassed = true;
+
+function check(label, passed, detail) {
+  const icon = passed ? "PASS" : "FAIL";
+  console.log(`  [${icon}] ${label}${detail ? " - " + detail : ""}`);
+  if (!passed) allPassed = false;
+  return passed;
+}
+
+function testAgent(agent) {
+  console.log(`\nTesting: ${agent.name}`);
+  console.log("-".repeat(40));
+
+  const configPath  = path.join(agent.dir, "agent-config.json");
+  const actionsPath = path.join(agent.dir, "actions/action-group.json");
+  const promptPath  = path.join(agent.dir, "prompts/system-prompt.md");
+
+  // agent-config.json
   if (!fs.existsSync(configPath)) {
-    console.error("Agent configuration file not found:", configPath);
-    return false;
+    check("agent-config.json exists", false, configPath);
+    return;
   }
-  
+  let config;
   try {
-    const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-    
-    const requiredFields = ["agentName", "description", "foundationModel", "instruction"];
-    const missingFields = requiredFields.filter(field => !config[field]);
-    
-    if (missingFields.length > 0) {
-      console.error("Missing required fields:", missingFields.join(", "));
-      return false;
+    config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  } catch (e) {
+    check("agent-config.json is valid JSON", false, e.message);
+    return;
+  }
+  check("agent-config.json is valid JSON", true);
+  check("agentName is set",        !!config.agentName,        config.agentName);
+  check("foundationModel is set",  !!config.foundationModel,  config.foundationModel);
+  check("instruction is set",      !!config.instruction);
+  check("no CustomerSupport refs", !JSON.stringify(config).match(/CustomerSupport/i));
+
+  // action-group.json
+  if (!fs.existsSync(actionsPath)) {
+    check("action-group.json exists", false, actionsPath);
+  } else {
+    let actions;
+    try {
+      actions = JSON.parse(fs.readFileSync(actionsPath, "utf8"));
+    } catch (e) {
+      check("action-group.json is valid JSON", false, e.message);
+      return;
     }
-    
-    console.log("Agent configuration file is valid");
-    console.log("   Agent Name:", config.agentName);
-    console.log("   Foundation Model:", config.foundationModel);
-    console.log("   Description:", config.description.substring(0, 50) + "...");
-    
-    return true;
-  } catch (error) {
-    console.error("Error reading agent configuration:", error.message);
-    return false;
+    check("action-group.json is valid JSON", true);
+    check("actionGroupName is correct", actions.actionGroupName === agent.expectedActionGroup, actions.actionGroupName);
+    check("no CustomerSupport refs", !JSON.stringify(actions).match(/CustomerSupport/i));
+    const actionNames = (actions.actions || []).map(a => a.actionName);
+    agent.expectedActions.forEach(expected => {
+      check(`action "${expected}" exists`, actionNames.includes(expected));
+    });
   }
-}
 
-// Test 2: Check prompt files exist
-function testPrompts() {
-  const promptsDir = path.join(__dirname, "..", "agents", "game-genie", "prompts");
-  
-  if (!fs.existsSync(promptsDir)) {
-    console.error("Prompts directory not found:", promptsDir);
-    return false;
-  }
-  
-  const promptFiles = fs.readdirSync(promptsDir).filter(f => f.endsWith(".md"));
-  
-  if (promptFiles.length === 0) {
-    console.error("No prompt files found in:", promptsDir);
-    return false;
-  }
-  
-  console.log("Prompt files found:", promptFiles.join(", "));
-  return true;
-}
-
-// Test 3: Check action files exist
-function testActions() {
-  const actionsDir = path.join(__dirname, "..", "agents", "game-genie", "actions");
-  
-  if (!fs.existsSync(actionsDir)) {
-    console.error("Actions directory not found:", actionsDir);
-    return false;
-  }
-  
-  const actionFiles = fs.readdirSync(actionsDir).filter(f => f.endsWith(".json"));
-  
-  if (actionFiles.length === 0) {
-    console.warn("No action files found in:", actionsDir);
+  // system-prompt.md
+  if (!fs.existsSync(promptPath)) {
+    check("system-prompt.md exists", false, promptPath);
   } else {
-    console.log("Action files found:", actionFiles.join(", "));
+    const content = fs.readFileSync(promptPath, "utf8");
+    check("system-prompt.md is non-empty", content.length > 0);
+    check("no CustomerSupport refs in prompt", !content.match(/CustomerSupport/i));
   }
-  
-  return true;
 }
 
-// Test 4: Validate CloudFormation template
+// CloudFormation template check
 function testCloudFormation() {
-  const templatePath = path.join(__dirname, "..", "infrastructure", "cloudformation", "bedrock-agent.yaml");
-  
+  console.log("\nTesting: CloudFormation Template");
+  console.log("-".repeat(40));
+  const templatePath = "infrastructure/cloudformation/bedrock-agent.yaml";
   if (!fs.existsSync(templatePath)) {
-    console.error("CloudFormation template not found:", templatePath);
-    return false;
+    check("bedrock-agent.yaml exists", false);
+    return;
   }
-  
   const template = fs.readFileSync(templatePath, "utf8");
-  
-  if (template.includes("GameGenie") || template.includes("GameGenieAgent")) {
-    console.log("CloudFormation template contains GameGenie references");
-    return true;
-  }
-  
-  console.warn("CloudFormation template may not be configured for GameGenie");
-  return true;
+  check("template exists",                  true);
+  check("contains GameGenieAgent resource", template.includes("GameGenieAgent"));
+  check("contains AgentResourceRoleArn",    template.includes("AgentResourceRoleArn"));
+  check("contains AutoPrepare",             template.includes("AutoPrepare"));
+  check("contains AgentAlias resource",     template.includes("AgentAlias"));
+  check("contains ConfigBucket parameter",  template.includes("ConfigBucket"));
+  check("no CustomerSupport refs",          !template.match(/CustomerSupport/i));
 }
 
-// Run all tests
-function runTests() {
-  console.log("Running GameGenie Agent Tests...\n");
-  
-  const results = {
-    config: testAgentConfig(),
-    prompts: testPrompts(),
-    actions: testActions(),
-    cloudformation: testCloudFormation()
-  };
-  
-  console.log("\n" + "=".repeat(50));
-  console.log("Test Results Summary:");
-  console.log("=".repeat(50));
-  
-  const allPassed = Object.values(results).every(r => r === true);
-  
-  Object.entries(results).forEach(([name, passed]) => {
-    const status = passed ? "PASS" : "FAIL";
-    console.log("   " + name + ": " + status);
-  });
-  
-  console.log("=".repeat(50));
-  
-  if (allPassed) {
-    console.log("\nAll tests passed! Ready to deploy.");
-    console.log("\nNext steps:");
-    console.log("  1. Review agent configuration in agents/game-genie/agent-config.json");
-    console.log("  2. Update prompts in agents/game-genie/prompts/");
-    console.log("  3. Deploy: npm run deploy:dev");
-    process.exit(0);
-  } else {
-    console.log("\nSome tests failed. Please fix the issues above.");
-    process.exit(1);
+// deploy.js check
+function testDeployScript() {
+  console.log("\nTesting: deploy.js");
+  console.log("-".repeat(40));
+  const scriptPath = "scripts/deploy.js";
+  if (!fs.existsSync(scriptPath)) {
+    check("deploy.js exists", false);
+    return;
   }
+  const script = fs.readFileSync(scriptPath, "utf8");
+  check("deploy.js exists",                    true);
+  check("default agent is game-genie",         script.includes("game-genie"));
+  check("no customer-support default",         !script.match(/customer-support/i));
+  check("no CustomerSupportAgent refs",        !script.match(/CustomerSupportAgent/i));
+  check("CAPABILITY_NAMED_IAM present",        script.includes("CAPABILITY_NAMED_IAM"));
 }
 
-runTests();
+// Run all
+console.log("=".repeat(50));
+console.log("GameGenie - Full Agent Test Suite");
+console.log("=".repeat(50));
+
+AGENTS.forEach(testAgent);
+testCloudFormation();
+testDeployScript();
+
+console.log("\n" + "=".repeat(50));
+if (allPassed) {
+  console.log("All tests passed! Ready to deploy.");
+  console.log("\nTo update your AWS Bedrock agent:");
+  console.log("  node scripts/agent-utils.js update <AGENT_ID> game-genie");
+  console.log("  node scripts/agent-utils.js update <AGENT_ID> kids-game-portal");
+  process.exit(0);
+} else {
+  console.log("Some tests FAILED. Fix the issues above before deploying.");
+  process.exit(1);
+}

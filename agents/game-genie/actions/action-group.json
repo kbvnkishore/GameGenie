@@ -1,0 +1,106 @@
+{
+  "actionGroupName": "GameGenieActions",
+  "description": "Actions for the GameGenie AI brain - processes game ideas and manages the game library",
+  "actionGroupExecutor": {
+    "lambda": {
+      "lambdaArn": "arn:aws:lambda:us-east-1:123456789012:function:game-genie-actions"
+    }
+  },
+  "apiSchema": {
+    "s3": {
+      "s3BucketName": "gamegenie-schemas",
+      "s3ObjectKey": "game-genie-openapi.yaml"
+    }
+  },
+  "actions": [
+    {
+      "actionName": "GenerateGame",
+      "description": "Generate a playable game from a kids idea description",
+      "parameters": [
+        {
+          "name": "gameIdea",
+          "type": "string",
+          "description": "The kids game idea description",
+          "required": true
+        },
+        {
+          "name": "ageGroup",
+          "type": "string",
+          "description": "Target age group (5-7, 8-10, 11-13)",
+          "required": false,
+          "default": "8-10"
+        },
+        {
+          "name": "gameType",
+          "type": "string",
+          "description": "Type of game (puzzle, adventure, arcade, quiz)",
+          "required": false,
+          "default": "arcade"
+        }
+      ]
+    },
+    {
+      "actionName": "AddGameToLibrary",
+      "description": "Add a newly created game to the game library",
+      "parameters": [
+        {
+          "name": "gameId",
+          "type": "string",
+          "description": "Unique identifier for the game",
+          "required": true
+        },
+        {
+          "name": "gameTitle",
+          "type": "string",
+          "description": "Title of the game",
+          "required": true
+        },
+        {
+          "name": "gameUrl",
+          "type": "string",
+          "description": "URL link to play the game",
+          "required": true
+        },
+        {
+          "name": "createdBy",
+          "type": "string",
+          "description": "Kid username or anonymous ID who created the game",
+          "required": false,
+          "default": "anonymous"
+        }
+      ]
+    },
+    {
+      "actionName": "GetGameLibrary",
+      "description": "Retrieve the list of available games in the library",
+      "parameters": [
+        {
+          "name": "category",
+          "type": "string",
+          "description": "Filter by game category (all, featured, new, created-by-kids)",
+          "required": false,
+          "default": "all"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Maximum number of games to return",
+          "required": false,
+          "default": 10
+        }
+      ]
+    },
+    {
+      "actionName": "GetGameById",
+      "description": "Get details and play link for a specific game",
+      "parameters": [
+        {
+          "name": "gameId",
+          "type": "string",
+          "description": "Unique identifier for the game",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

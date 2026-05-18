@@ -1,139 +1,174 @@
-﻿#!/usr/bin/env node
+const { BedrockAgentClient, UpdateAgentCommand, PrepareAgentCommand, CreateAgentAliasCommand, ListAgentVersionsCommand } = require("@aws-sdk/client-bedrock-agent");
+const { S3Client, PutObjectCommand, ListObjectsV2Command, GetObjectCommand } = require("@aws-sdk/client-s3");
+const fs = require("fs");
+const path = require("path");
 
-const { BedrockAgentClient, ExportAgentCommand, ImportAgentCommand } = require('@aws-sdk/client-bedrock-agent');
-const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
-const fs = require('fs');
-const path = require('path');
+const AGENTS = {
+  "game-genie":       "agents/game-genie/agent-config.json",
+  "kids-game-portal": "agents/kids-game-portal/agent-config.json"
+};
 
 class AgentVersionManager {
-  constructor(environment = 'dev') {
+  constructor(environment = "dev") {
     this.environment = environment;
-    this.bedrockClient = new BedrockAgentClient({ region: 'us-east-1' });
-    this.s3Client = new S3Client({ region: 'us-east-1' });
-    this.configBucket = process.env.CONFIG_BUCKET || `bedrock-agent-configs-${environment}`;
+    this.region = process.env.AWS_REGION || "us-east-1";
+    this.bedrockClient = new BedrockAgentClient({ region: this.region });
+    this.s3Client = new S3Client({ region: this.region });
+    this.configBucket = process.env.CONFIG_BUCKET || `gamegenie-configs-${environment}`;
   }
 
-  async exportAgent(agentId, agentVersion = 'DRAFT', outputDir = './exports') {
-    console.log(`Exporting agent ${agentId}...`);
-    
-    try {
-      // Create export command
-      const exportCommand = new ExportAgentCommand({
-        agentId,
-        agentVersion,
-        s3BucketName: this.configBucket,
-        s3KeyPrefix: `exports/${agentId}/${new Date().toISOString().split('T')[0]}/`
-      });
-
-      const exportResult = await this.bedrockClient.send(exportCommand);
-      console.log('Export initiated:', exportResult.exportId);
-      
-      // Download exported files from S3
-      await this.downloadExport(exportResult.s3BucketName, exportResult.s3KeyPrefix, outputDir);
-      
-      console.log(`Agent exported to ${outputDir}`);
-      return exportResult;
-    } catch (error) {
-      console.error('Export failed:', error.message);
-      throw error;
+  // ── Update an existing AWS Bedrock agent from local config ──────────────────
+  async updateAgent(agentId, agentName) {
+    const configPath = AGENTS[agentName];
+    if (!configPath || !fs.existsSync(configPath)) {
+      throw new Error(`Config not found for agent: ${agentName}. Valid agents: ${Object.keys(AGENTS).join(", ")}`);
     }
+
+    const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    console.log(`Updating AWS Bedrock agent ${agentId} (${config.agentName})...`);
+
+    const updateCommand = new UpdateAgentCommand({
+      agentId,
+      agentName: config.agentName,
+      foundationModel: config.foundationModel,
+      instruction: config.instruction,
+      idleSessionTTLInSeconds: config.idleSessionTTLInSeconds || 900,
+      agentResourceRoleArn: process.env.AGENT_ROLE_ARN
+    });
+
+    const result = await this.bedrockClient.send(updateCommand);
+    console.log("Agent updated. Status:", result.agent.agentStatus);
+
+    // Prepare the agent so changes take effect
+    await this.prepareAgent(agentId);
+    return result;
   }
 
-  async downloadExport(bucket, keyPrefix, outputDir) {
-    // This would list and download all files from the S3 export
-    // For now, just create a placeholder
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+  // ── Prepare (compile) the agent after updates ───────────────────────────────
+  async prepareAgent(agentId) {
+    console.log(`Preparing agent ${agentId}...`);
+    const prepareCommand = new PrepareAgentCommand({ agentId });
+    const result = await this.bedrockClient.send(prepareCommand);
+    console.log("Agent prepared. Status:", result.agentStatus);
+    return result;
+  }
+
+  // ── Create a new alias (version snapshot) ───────────────────────────────────
+  async createAlias(agentId, aliasName, description) {
+    console.log(`Creating alias "${aliasName}" for agent ${agentId}...`);
+    const command = new CreateAgentAliasCommand({
+      agentId,
+      agentAliasName: aliasName,
+      description: description || `${aliasName} - ${new Date().toISOString()}`
+    });
+    const result = await this.bedrockClient.send(command);
+    console.log("Alias created:", result.agentAlias.agentAliasId);
+    return result;
+  }
+
+  // ── List all versions of an agent ───────────────────────────────────────────
+  async listVersions(agentId) {
+    console.log(`Listing versions for agent ${agentId}...`);
+    const command = new ListAgentVersionsCommand({ agentId });
+    const result = await this.bedrockClient.send(command);
+    console.table(result.agentVersionSummaries.map(v => ({
+      version: v.agentVersion,
+      status:  v.agentStatus,
+      created: v.creationDateTime
+    })));
+    return result.agentVersionSummaries;
+  }
+
+  // ── Save local config snapshot to S3 for version history ────────────────────
+  async backupConfigToS3(agentName) {
+    const configPath = AGENTS[agentName];
+    if (!configPath || !fs.existsSync(configPath)) {
+      throw new Error(`Config not found for agent: ${agentName}`);
     }
-    
-    const manifest = {
-      exportedAt: new Date().toISOString(),
-      bucket,
-      keyPrefix,
-      files: ['agent-configuration.json', 'prompts/', 'actions/']
-    };
-    
-    fs.writeFileSync(
-      path.join(outputDir, 'export-manifest.json'),
-      JSON.stringify(manifest, null, 2)
-    );
-    
-    console.log(`Created export manifest in ${outputDir}`);
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const s3Key = `agents/${agentName}/config-${this.environment}-${timestamp}.json`;
+    const content = fs.readFileSync(configPath);
+
+    const command = new PutObjectCommand({
+      Bucket: this.configBucket,
+      Key: s3Key,
+      Body: content,
+      ContentType: "application/json",
+      Metadata: { environment: this.environment, agentName, timestamp }
+    });
+
+    await this.s3Client.send(command);
+    console.log(`Config backed up to s3://${this.configBucket}/${s3Key}`);
+    return s3Key;
   }
 
-  async importAgent(agentConfigPath, agentName) {
-    console.log(`Importing agent from ${agentConfigPath}...`);
-    
-    try {
-      const agentConfig = JSON.parse(fs.readFileSync(agentConfigPath, 'utf8'));
-      
-      const importCommand = new ImportAgentCommand({
-        agentName: agentName || agentConfig.agentName,
-        instruction: agentConfig.instruction,
-        foundationModel: agentConfig.foundationModel,
-        idleSessionTTLInSeconds: agentConfig.idleSessionTTLInSeconds || 600
-      });
-
-      const importResult = await this.bedrockClient.send(importCommand);
-      console.log('Agent imported successfully:', importResult.agentId);
-      return importResult;
-    } catch (error) {
-      console.error('Import failed:', error.message);
-      throw error;
-    }
-  }
-
-  async listVersions(agentName) {
-    console.log(`Listing versions for agent ${agentName}...`);
-    
-    // List S3 objects for this agent
-    // This is a simplified version - in reality you'd use S3 listObjectsV2
-    const versions = [
-      { version: '1.0.0', date: '2024-01-15', environment: 'dev' },
-      { version: '1.0.1', date: '2024-01-20', environment: 'staging' },
-      { version: '1.1.0', date: '2024-02-01', environment: 'prod' }
-    ];
-    
-    console.table(versions);
-    return versions;
+  // ── List S3 config backups for an agent ─────────────────────────────────────
+  async listBackups(agentName) {
+    const command = new ListObjectsV2Command({
+      Bucket: this.configBucket,
+      Prefix: `agents/${agentName}/`
+    });
+    const result = await this.s3Client.send(command);
+    const backups = (result.Contents || []).map(o => ({
+      key:          o.Key,
+      lastModified: o.LastModified,
+      size:         o.Size
+    }));
+    console.table(backups);
+    return backups;
   }
 }
 
-// CLI interface
+// ── CLI ────────────────────────────────────────────────────────────────────────
 if (require.main === module) {
   const [command, ...args] = process.argv.slice(2);
-  const manager = new AgentVersionManager(process.env.ENVIRONMENT || 'dev');
-  
-  switch (command) {
-    case 'export':
-      const [agentId, outputDir] = args;
-      manager.exportAgent(agentId, 'DRAFT', outputDir).catch(console.error);
-      break;
-      
-    case 'import':
-      const [configPath, agentName] = args;
-      manager.importAgent(configPath, agentName).catch(console.error);
-      break;
-      
-    case 'list':
-      const [agentNameToList] = args;
-      manager.listVersions(agentNameToList).catch(console.error);
-      break;
-      
-    default:
-      console.log(`
+  const manager = new AgentVersionManager(process.env.ENVIRONMENT || "dev");
+
+  const usage = `
 Usage: node agent-utils.js <command> [args]
-  
+
 Commands:
-  export <agentId> [outputDir]  Export agent configuration
-  import <configPath> [agentName] Import agent configuration
-  list <agentName>             List agent versions
-  
+  update  <agentId> <agentName>   Update AWS agent from local config and prepare it
+  prepare <agentId>               Prepare (compile) an agent after manual changes
+  alias   <agentId> <aliasName>   Create a new alias/version snapshot
+  versions <agentId>              List all versions of an agent
+  backup  <agentName>             Backup local config to S3
+  backups <agentName>             List S3 config backups
+
+Agent names: ${Object.keys(AGENTS).join(", ")}
+
 Examples:
-  node agent-utils.js export AGENT-123 ./exports
-  node agent-utils.js import ./agents/customer-support/agent-config.json
-  node agent-utils.js list CustomerSupportAgent
-      `);
+  node scripts/agent-utils.js update  ABCDEF1234 game-genie
+  node scripts/agent-utils.js update  ABCDEF5678 kids-game-portal
+  node scripts/agent-utils.js prepare ABCDEF1234
+  node scripts/agent-utils.js alias   ABCDEF1234 v1.1-release
+  node scripts/agent-utils.js versions ABCDEF1234
+  node scripts/agent-utils.js backup  game-genie
+  node scripts/agent-utils.js backups game-genie
+`;
+
+  switch (command) {
+    case "update":
+      manager.updateAgent(args[0], args[1]).catch(console.error);
+      break;
+    case "prepare":
+      manager.prepareAgent(args[0]).catch(console.error);
+      break;
+    case "alias":
+      manager.createAlias(args[0], args[1], args[2]).catch(console.error);
+      break;
+    case "versions":
+      manager.listVersions(args[0]).catch(console.error);
+      break;
+    case "backup":
+      manager.backupConfigToS3(args[0]).catch(console.error);
+      break;
+    case "backups":
+      manager.listBackups(args[0]).catch(console.error);
+      break;
+    default:
+      console.log(usage);
   }
 }
 

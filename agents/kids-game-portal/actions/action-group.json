@@ -1,0 +1,73 @@
+{
+  "actionGroupName": "KidsGamePortalActions",
+  "description": "Actions for the KidsGamePortal frontend agent - handles game display, idea submission, and portal interactions",
+  "actionGroupExecutor": {
+    "lambda": {
+      "lambdaArn": "arn:aws:lambda:us-east-1:123456789012:function:kids-game-portal-actions"
+    }
+  },
+  "apiSchema": {
+    "s3": {
+      "s3BucketName": "gamegenie-schemas",
+      "s3ObjectKey": "kids-game-portal-openapi.yaml"
+    }
+  },
+  "actions": [
+    {
+      "actionName": "GetProblemOfTheDay",
+      "description": "Fetch the current problem or challenge to display to kids",
+      "parameters": [
+        {
+          "name": "ageGroup",
+          "type": "string",
+          "description": "Target age group to tailor the problem (5-7, 8-10, 11-13)",
+          "required": false,
+          "default": "8-10"
+        }
+      ]
+    },
+    {
+      "actionName": "GetFeaturedGames",
+      "description": "Get the list of pre-selected featured games for the portal homepage",
+      "parameters": [
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Number of featured games to return",
+          "required": false,
+          "default": 6
+        }
+      ]
+    },
+    {
+      "actionName": "SubmitGameIdea",
+      "description": "Submit a kids game idea to the GameGenie brain for processing",
+      "parameters": [
+        {
+          "name": "ideaText",
+          "type": "string",
+          "description": "The game idea written by the kid",
+          "required": true
+        },
+        {
+          "name": "sessionId",
+          "type": "string",
+          "description": "Anonymous session ID for the kid",
+          "required": true
+        }
+      ]
+    },
+    {
+      "actionName": "GetCreatedGameLink",
+      "description": "Poll for the game link once GameGenie has finished creating the game",
+      "parameters": [
+        {
+          "name": "jobId",
+          "type": "string",
+          "description": "Job ID returned from SubmitGameIdea",
+          "required": true
+        }
+      ]
+    }
+  ]
+}
