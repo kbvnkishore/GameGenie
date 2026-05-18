@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GameGenie 🎮 - Create & Play Games!</title>
+  <link rel="stylesheet" href="/css/portal.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ── HEADER ─────────────────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">🧞 GameGenie</div>
+      <div class="tagline">Think it. Create it. Play it!</div>
+    </div>
+  </header>
+
+  <!-- ── MAIN ───────────────────────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- Problem of the Day -->
+    <section class="card problem-card" id="problemSection">
+      <div class="card-header">
+        <span class="section-icon" id="problemEmoji">🤔</span>
+        <h2>Problem of the Day</h2>
+      </div>
+      <div id="problemContent" class="problem-text">
+        <div class="loading-dots">Loading today's challenge<span>.</span><span>.</span><span>.</span></div>
+      </div>
+    </section>
+
+    <!-- Game Idea Box -->
+    <section class="card idea-card">
+      <div class="card-header">
+        <span class="section-icon">💡</span>
+        <h2>Got a Game Idea?</h2>
+      </div>
+      <p class="idea-subtitle">Tell GameGenie your idea and watch it come to life! ✨</p>
+      <div class="idea-form">
+        <textarea
+          id="ideaInput"
+          placeholder="Example: A game where a cat collects fish while avoiding dogs... 🐱🐟"
+          maxlength="500"
+          rows="4"
+        ></textarea>
+        <div class="idea-footer">
+          <span id="charCount" class="char-count">0 / 500</span>
+          <button id="submitIdea" class="btn btn-primary" onclick="submitIdea()">
+            🪄 Create My Game!
+          </button>
+        </div>
+      </div>
+
+      <!-- Result area -->
+      <div id="ideaResult" class="idea-result hidden"></div>
+    </section>
+
+    <!-- Game Library -->
+    <section class="card games-card">
+      <div class="card-header">
+        <span class="section-icon">🕹️</span>
+        <h2>Play Now!</h2>
+        <div class="tab-group">
+          <button class="tab active" onclick="switchTab('featured', this)">Featured</button>
+          <button class="tab" onclick="switchTab('all', this)">All Games</button>
+          <button class="tab" onclick="switchTab('kids', this)">Made by Kids 🌟</button>
+        </div>
+      </div>
+      <div id="gamesGrid" class="games-grid">
+        <div class="loading-dots">Loading games<span>.</span><span>.</span><span>.</span></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── FOOTER ─────────────────────────────────────────────────────────── -->
+  <footer class="footer">
+    <p>🎮 GameGenie — Where every idea becomes a game! Made with ❤️ for kids everywhere.</p>
+  </footer>
+
+  <!-- ── TOAST NOTIFICATION ─────────────────────────────────────────────── -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="/js/portal.js"></script>
+</body>
+</html>
