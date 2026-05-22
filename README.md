@@ -1,5 +1,27 @@
 # GameGenie
 
+Updates:
+ - Added lightweight agent metadata files for `game-genie` and `kids-game-portal` to help tooling and maintainers: see `agents/*/.agent.md` and `agents/*/.instructions.md`.
+ - Added `AGENTS.md` and `copilot-instructions.md` to document agents and assistant guidelines.
+
+Run tests:
+```bash
+npm install
+npm test
+```
+This repository contains an AI-powered gaming platform for kids.
+
+Updates:
+ - Added lightweight agent metadata files for `game-genie` and `kids-game-portal` to help tooling and maintainers: see `agents/*/.agent.md` and `agents/*/.instructions.md`.
+ - Added `AGENTS.md` and `copilot-instructions.md` to document agents and assistant guidelines.
+
+Run tests:
+```bash
+npm install
+npm test
+```
+# GameGenie
+
 > AI-powered gaming portal for kids - think it, create it, play it!
 
 [![GitHub](https://img.shields.io/github/last-commit/kbvnkishore/GameGenie)](https://github.com/kbvnkishore/GameGenie)
