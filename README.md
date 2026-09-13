@@ -200,9 +200,3 @@ This project is designed for kids and learning experiences. It keeps content age
 **GitHub Secrets required:**
 `AWS_ACCESS_KEY_ID_DEV`, `AWS_SECRET_ACCESS_KEY_DEV`,
 `AWS_ACCESS_KEY_ID_PROD`, `AWS_SECRET_ACCESS_KEY_PROD`
-
----
-
-## License
-
-MIT
