@@ -173,7 +173,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   startAmbientMusic();
   await loadCurrentGameSource();
-  loadProblem();
   loadGames("featured");
   setupCharCounter();
   setupVoiceIdeaInput();
@@ -241,32 +240,6 @@ async function loadCurrentGameSource() {
     }
   } catch (err) {
     console.warn("Could not load current game source.", err);
-  }
-}
-
-/* ── Problem of the Day ───────────────────────────────────────────────────── */
-async function loadProblem() {
-  try {
-    const res  = await fetch("/api/portal/problem");
-    const data = await res.json();
-    const el   = document.getElementById("problemContent");
-    const emo  = document.getElementById("problemEmoji");
-
-    if (data.success && data.problem) {
-      emo.textContent = data.problem.emoji || "🤔";
-      el.innerHTML = `
-        <strong style="font-size:1.15rem; color:#fbbf24;">${data.problem.title}</strong>
-        <br/><br/>
-        ${data.problem.description}
-        <br/><br/>
-        <span style="color:#a855f7; font-weight:700;">💡 Got an idea? Write it in the box below!</span>
-      `;
-    } else {
-      el.textContent = "Could not load today's challenge. Try refreshing!";
-    }
-  } catch (err) {
-    document.getElementById("problemContent").textContent = "Could not connect to GameGenie. Is the server running?";
-    console.error(err);
   }
 }
 
