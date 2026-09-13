@@ -13,6 +13,8 @@
  *   USE_MOCK_AGENTS - Switches between mockAgentService and bedrockAgentService
  */
 
+const fs             = require("fs");
+const path           = require("path");
 const express        = require("express");
 const router         = express.Router();
 const { v4: uuidv4 } = require("uuid");
@@ -40,7 +42,7 @@ router.get("/games", async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 6;
     const all   = req.query.all === "true";
-    const games = all ? agentSvc.getAllGames(20) : agentSvc.getFeaturedGames(limit);
+    const games = all ? await agentSvc.getAllGames(20) : await agentSvc.getFeaturedGames(limit);
     res.json({ success: true, games });
   } catch (err) {
     console.error("[portal/games]", err.message);
@@ -48,20 +50,111 @@ router.get("/games", async (req, res) => {
   }
 });
 
+// GET /api/portal/game-source
+router.get("/game-source", (req, res) => {
+  const source = (process.env.GAME_LIBRARY_SOURCE || process.env.GAME_LIBRARY_LOCAL_PATH || process.env.GAME_LIBRARY_S3_BASE_URL || "").trim();
+  const localPath = (process.env.GAME_LIBRARY_LOCAL_PATH || "").trim();
+  const s3BaseUrl = (process.env.GAME_LIBRARY_S3_BASE_URL || "").trim();
+
+  return res.json({
+    success: true,
+    source,
+    localPath,
+    s3BaseUrl,
+    type: localPath ? "local" : s3BaseUrl ? "s3" : "fallback"
+  });
+});
+
+// POST /api/portal/game-source
+router.post("/game-source", (req, res) => {
+  const source = String(req.body?.source || "").trim();
+
+  if (!source) {
+    delete process.env.GAME_LIBRARY_S3_BASE_URL;
+    delete process.env.GAME_LIBRARY_LOCAL_PATH;
+    delete process.env.GAME_LIBRARY_SOURCE;
+
+    try {
+      const envPath = path.join(__dirname, "..", "..", ".env.local");
+      if (fs.existsSync(envPath)) {
+        const content = fs.readFileSync(envPath, "utf8");
+        const lines = content.split(/\r?\n/).filter(line => !line.startsWith("GAME_LIBRARY_S3_BASE_URL=") && !line.startsWith("GAME_LIBRARY_LOCAL_PATH=") && !line.startsWith("GAME_LIBRARY_SOURCE="));
+        lines.push("GAME_LIBRARY_S3_BASE_URL=");
+        lines.push("GAME_LIBRARY_LOCAL_PATH=");
+        lines.push("GAME_LIBRARY_SOURCE=");
+        fs.writeFileSync(envPath, lines.join("\n") + "\n");
+      }
+    } catch (err) {
+      console.warn("[portal/game-source] Unable to reset env file.", err.message);
+    }
+
+    return res.json({ success: true, message: "Game source reset to local fallback." });
+  }
+
+  const normalized = source.replace(/\\/g, "/");
+
+  if (/^https?:\/\//i.test(normalized)) {
+    process.env.GAME_LIBRARY_S3_BASE_URL = normalized;
+    process.env.GAME_LIBRARY_LOCAL_PATH = "";
+    process.env.GAME_LIBRARY_SOURCE = normalized;
+
+    try {
+      const envPath = path.join(__dirname, "..", "..", ".env.local");
+      if (fs.existsSync(envPath)) {
+        const content = fs.readFileSync(envPath, "utf8");
+        const lines = content.split(/\r?\n/).filter(line => !line.startsWith("GAME_LIBRARY_S3_BASE_URL=") && !line.startsWith("GAME_LIBRARY_LOCAL_PATH=") && !line.startsWith("GAME_LIBRARY_SOURCE="));
+        lines.push(`GAME_LIBRARY_S3_BASE_URL=${normalized}`);
+        lines.push("GAME_LIBRARY_LOCAL_PATH=");
+        lines.push(`GAME_LIBRARY_SOURCE=${normalized}`);
+        fs.writeFileSync(envPath, lines.join("\n") + "\n");
+      }
+    } catch (err) {
+      console.warn("[portal/game-source] Unable to update env file.", err.message);
+    }
+
+    return res.json({ success: true, message: "S3 game source updated.", source: normalized, type: "s3" });
+  }
+
+  process.env.GAME_LIBRARY_LOCAL_PATH = normalized;
+  process.env.GAME_LIBRARY_S3_BASE_URL = "";
+  process.env.GAME_LIBRARY_SOURCE = normalized;
+
+  try {
+    const envPath = path.join(__dirname, "..", "..", ".env.local");
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, "utf8");
+      const lines = content.split(/\r?\n/).filter(line => !line.startsWith("GAME_LIBRARY_S3_BASE_URL=") && !line.startsWith("GAME_LIBRARY_LOCAL_PATH=") && !line.startsWith("GAME_LIBRARY_SOURCE="));
+      lines.push("GAME_LIBRARY_S3_BASE_URL=");
+      lines.push(`GAME_LIBRARY_LOCAL_PATH=${normalized}`);
+      lines.push(`GAME_LIBRARY_SOURCE=${normalized}`);
+      fs.writeFileSync(envPath, lines.join("\n") + "\n");
+    }
+  } catch (err) {
+    console.warn("[portal/game-source] Unable to update env file.", err.message);
+  }
+
+  return res.json({ success: true, message: "Local game source updated.", source: normalized, type: "local" });
+});
+
 // POST /api/portal/idea  body: { ideaText: string, sessionId?: string }
 router.post("/idea", async (req, res) => {
-  const { ideaText, sessionId } = req.body;
-  if (!ideaText || ideaText.trim().length < 5)
+  const { ideaText, sessionId, conversation } = req.body;
+  const combinedIdea = typeof ideaText === "string" ? ideaText.trim() : "";
+  const parsedConversation = Array.isArray(conversation) ? conversation : [];
+  const summary = combinedIdea || parsedConversation.filter(item => item && item.role === "user").map(item => item.text).join(" \n ").trim();
+
+  if (!summary || summary.length < 5)
     return res.status(400).json({ success: false, error: "Please write a longer idea!" });
-  if (ideaText.length > 500)
-    return res.status(400).json({ success: false, error: "Idea is too long. Keep it under 500 characters." });
+  if (summary.length > 2000)
+    return res.status(400).json({ success: false, error: "Idea is too long. Keep it under 2000 characters." });
+
   try {
-    const sid    = sessionId || uuidv4();
-    const result = await agentSvc.generateGame(ideaText.trim(), sid);
+    const sid = sessionId || uuidv4();
+    const result = await agentSvc.generateGame(summary, sid, parsedConversation);
     res.json({ success: true, ...result, sessionId: sid });
   } catch (err) {
     console.error("[portal/idea]", err.message);
-    res.status(500).json({ success: false, error: "GameGenie is thinking... try again in a moment!" });
+    res.status(500).json({ success: false, error: "Game is generating... please wait a moment." });
   }
 });
 

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kids Super Quiz</title>
+
+<style>
+  body {
+    margin: 0;
+    font-family: "Comic Sans MS", Arial, sans-serif;
+    background: linear-gradient(to bottom, #87cefa, #ffffff);
+    text-align: center;
+    overflow: hidden;
+  }
+
+  h1 {
+    font-size: 3rem;
+    color: #ff4081;
+    margin-top: 20px;
+    text-shadow: 2px 2px white;
+  }
+
+  #menu {
+    margin-top: 40px;
+  }
+
+  .menu-btn {
+    padding: 20px 40px;
+    margin: 15px;
+    font-size: 1.8rem;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    background: #ffeb3b;
+    color: #d32f2f;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  }
+
+  .menu-btn:hover {
+    transform: scale(1.05);
+  }
+
+  #gameArea {
+    display: none;
+    margin-top: 20px;
+  }
+
+  #modeTitle {
+    font-size: 2rem;
+    color: #4a148c;
+    margin-bottom: 10px;
+  }
+
+  #progressText {
+    font-size: 1.2rem;
+    margin-top: 5px;
+  }
+
+  #progressBarOuter {
+    width: 80%;
+    height: 20px;
+    background: #eee;
+    border-radius: 10px;
+    margin: 10px auto;
+    overflow: hidden;
+  }
+
+  #progressBarInner {
+    height: 100%;
+    width: 0%;
+    background: #4caf50;
+    transition: width 0.3s;
+  }
+
+  #questionBox {
+    margin-top: 20px;
+  }
+
+  #mainPrompt {
+    font-size: 1.4rem;
+    color: #333;
+  }
+
+  #letterBox {
+    font-size: 5rem;
+    margin-top: 10px;
+    color: #d32f2f;
+    background: #ffeb3b;
+    display: inline-block;
+    padding: 20px 40px;
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transition: transform 0.3s;
+  }
+
+  .options {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 25px;
+  }
+
+  .optionBtn {
+    font-size: 2rem;
+    padding: 20px 30px;
+    background: #c5e1a5;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    width: 260px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transition: transform 0.2s, background 0.2s;
+  }
+
+  .optionBtn:hover {
+    transform: scale(1.05);
+  }
+
+  .optionBtn.correctAnim {
+    animation: bounce 0.6s;
+    background: #4caf50 !important;
+    color: #fff;
+  }
+
+  .optionBtn.wrongAnim {
+    animation: shake 0.4s;
+    background: #f44336 !important;
+    color: #fff;
+  }
+
+  @keyframes bounce {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.15); }
+    60% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+  }
+
+  #message {
+    margin-top: 20px;
+    font-size: 1.8rem;
+    color: #4a148c;
+    min-height: 2rem;
+  }
+
+  #backBtn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    border-radius: 20px;
+    border: none;
+    background: #ff4081;
+    color: #fff;
+    cursor: pointer;
+  }
+
+  /* Confetti */
+  .confetti {
+    position: fixed;
+    width: 10px;
+    height: 14px;
+    background-color: red;
+    top: -20px;
+    animation: fall 3s linear forwards;
+    z-index: 999;
+  }
+
+  @keyframes fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+  }
+</style>
+</head>
+
+<body>
+
+<h1>Kids Super Quiz</h1>
+
+<div id="menu">
+  <p style="font-size:1.4rem;">Choose what to practice:</p>
+  <button class="menu-btn" onclick="startMode('letters')">Letters</button>
+  <button class="menu-btn" onclick="startMode('numbers')">Numbers</button>
+  <button class="menu-btn" onclick="startMode('shapes')">Shapes</button>
+  <button class="menu-btn" onclick="startMode('colors')">Colors</button>
+</div>
+
+<div id="gameArea">
+  <div id="modeTitle"></div>
+  <div id="progressText"></div>
+  <div id="progressBarOuter">
+    <div id="progressBarInner"></div>
+  </div>
+
+  <div id="questionBox">
+    <div id="mainPrompt"></div>
+    <div id="letterBox"></div>
+  </div>
+
+  <div class="options" id="optionsArea"></div>
+
+  <div id="message"></div>
+
+  <button id="backBtn" onclick="backToMenu()">Back to Menu</button>
+</div>
+
+<!-- Sounds -->
+<audio id="clapSound" src="https://actions.google.com/sounds/v1/human_voices/human_cheer.ogg"></audio>
+<audio id="noSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+
+<script>
+/* DATA SETS */
+const letterData = {
+  A:["🍎 Apple","🐜 Ant","🚗 Car","🐶 Dog"],
+  B:["🐻 Bear","🍌 Banana","🐱 Cat","🚀 Rocket"],
+  C:["🐱 Cat","🌜 Moon","🍪 Cookie","🐘 Elephant"],
+  D:["🐶 Dog","🍩 Donut","🦆 Duck","🚗 Car"],
+  E:["🐘 Elephant","🥚 Egg","🚀 Rocket","🍎 Apple"],
+  F:["🐸 Frog","🍟 Fries","🐱 Cat","🚗 Car"],
+  G:["🦒 Giraffe","🥁 Drum","🍇 Grapes","🐶 Dog"],
+  H:["🏠 House","🐹 Hamster","🍯 Honey","🚗 Car"],
+  I:["🍦 Ice Cream","🍨 Ice","🐙 Octopus","🐱 Cat"],
+  J:["🧃 Juice","🤹 Juggler","🐶 Dog","🍎 Apple"],
+  K:["🔑 Key","🥝 Kiwi","🐨 Koala","🚗 Car"],
+  L:["🦁 Lion","🍋 Lemon","🐞 Ladybug","🐱 Cat"],
+  M:["🐵 Monkey","🌝 Moon","🍈 Melon","🐶 Dog"],
+  N:["🪺 Nest","👃 Nose","🍜 Noodles","🐱 Cat"],
+  O:["🐙 Octopus","🍊 Orange","🧅 Onion","🐶 Dog"],
+  P:["🅿️ Parking","🐧 Penguin","🍕 Pizza","🐱 Cat"],
+  Q:["👸 Queen","❓ Question","🧵 Quilt","🐶 Dog"],
+  R:["🤖 Robot","🚗 Racecar","🌈 Rainbow","🐱 Cat"],
+  S:["🐍 Snake","⭐ Star","🍓 Strawberry","🐶 Dog"],
+  T:["🐯 Tiger","🌮 Taco","🌴 Tree","🐱 Cat"],
+  U:["☂️ Umbrella","🦄 Unicorn","🛳️ Underwater","🐶 Dog"],
+  V:["🎻 Violin","🌋 Volcano","🍇 Vine","🐱 Cat"],
+  W:["🌊 Water","🍉 Watermelon","🪵 Wood","🐶 Dog"],
+  X:["❌ X-mark","📦 Box","🪓 Axe","🐱 Cat"],
+  Y:["🛝 Yard","🧈 Yellow Butter","🪀 Yo-yo","🐶 Dog"],
+  Z:["🦓 Zebra","⚡ Zap","🥒 Zucchini","🐱 Cat"]
+};
+
+const numberData = {
+  1:["1️⃣ One Apple","2️⃣ Two Cats","3️⃣ Three Dogs","4️⃣ Four Lions"],
+  2:["2️⃣ Two Cats","1️⃣ One Apple","3️⃣ Three Dogs","4️⃣ Four Lions"],
+  3:["3️⃣ Three Dogs","1️⃣ One Apple","2️⃣ Two Cats","4️⃣ Four Lions"],
+  4:["4️⃣ Four Lions","1️⃣ One Apple","2️⃣ Two Cats","3️⃣ Three Dogs"],
+  5:["5️⃣ Five Monkeys","6️⃣ Six Frogs","7️⃣ Seven Snakes","8️⃣ Eight Octopus"],
+  6:["6️⃣ Six Frogs","5️⃣ Five Monkeys","7️⃣ Seven Snakes","8️⃣ Eight Octopus"],
+  7:["7️⃣ Seven Snakes","5️⃣ Five Monkeys","6️⃣ Six Frogs","8️⃣ Eight Octopus"],
+  8:["8️⃣ Eight Octopus","5️⃣ Five Monkeys","6️⃣ Six Frogs","7️⃣ Seven Snakes"],
+  9:["9️⃣ Nine Bears","1️⃣ One Apple","2️⃣ Two Cats","3️⃣ Three Dogs"],
+  10:["🔟 Ten Tigers","5️⃣ Five Monkeys","6️⃣ Six Frogs","7️⃣ Seven Snakes"]
+};
+
+const shapeData = {
+  Circle:["⚪ Circle","🟥 Square","🔺 Triangle","🟦 Rectangle"],
+  Square:["🟥 Square","⚪ Circle","🔺 Triangle","🟦 Rectangle"],
+  Triangle:["🔺 Triangle","🟥 Square","⚪ Circle","🟦 Rectangle"],
+  Rectangle:["🟦 Rectangle","🟥 Square","⚪ Circle","🔺 Triangle"],
+  Star:["⭐ Star","⚪ Circle","🟥 Square","🔺 Triangle"],
+  Heart:["❤️ Heart","⚪ Circle","🟥 Square","🔺 Triangle"]
+};
+
+const colorData = {
+  Red:["🟥 Red","🟦 Blue","🟩 Green","🟨 Yellow"],
+  Blue:["🟦 Blue","🟥 Red","🟩 Green","🟨 Yellow"],
+  Green:["🟩 Green","🟥 Red","🟦 Blue","🟨 Yellow"],
+  Yellow:["🟨 Yellow","🟥 Red","🟦 Blue","🟩 Green"],
+  Purple:["🟪 Purple","🟥 Red","🟦 Blue","🟩 Green"],
+  Orange:["🟧 Orange","🟥 Red","🟦 Blue","🟩 Green"]
+};
+
+let currentMode = null;
+let keys = [];
+let index = 0;
+
+/* START / MENU */
+function startMode(mode) {
+  currentMode = mode;
+  document.getElementById("menu").style.display = "none";
+  document.getElementById("gameArea").style.display = "block";
+  document.getElementById("message").textContent = "";
+
+  if (mode === "letters") {
+    keys = Object.keys(letterData);
+    document.getElementById("modeTitle").textContent = "Letters";
+    document.getElementById("mainPrompt").textContent = "Which picture starts with this letter?";
+  } else if (mode === "numbers") {
+    keys = Object.keys(numberData);
+    document.getElementById("modeTitle").textContent = "Numbers";
+    document.getElementById("mainPrompt").textContent = "Which picture shows this number?";
+  } else if (mode === "shapes") {
+    keys = Object.keys(shapeData);
+    document.getElementById("modeTitle").textContent = "Shapes";
+    document.getElementById("mainPrompt").textContent = "Which picture is this shape?";
+  } else if (mode === "colors") {
+    keys = Object.keys(colorData);
+    document.getElementById("modeTitle").textContent = "Colors";
+    document.getElementById("mainPrompt").textContent = "Which picture is this color?";
+  }
+
+  keys = keys.sort(); // stable order
+  index = 0;
+  loadQuestion();
+}
+
+/* LOAD QUESTION */
+function loadQuestion() {
+  const total = keys.length;
+  const key = keys[index];
+
+  document.getElementById("progressText").textContent =
+    "Question " + (index + 1) + " of " + total;
+  document.getElementById("progressBarInner").style.width =
+    ((index) / total) * 100 + "%";
+
+  const letterBox = document.getElementById("letterBox");
+  letterBox.style.transform = "scale(1)";
+  letterBox.textContent = key;
+
+  const optionsArea = document.getElementById("optionsArea");
+  optionsArea.innerHTML = "";
+
+  let options;
+  if (currentMode === "letters") options = letterData[key];
+  else if (currentMode === "numbers") options = numberData[key];
+  else if (currentMode === "shapes") options = shapeData[key];
+  else if (currentMode === "colors") options = colorData[key];
+
+  const correct = options[0];
+  const shuffled = [...options].sort(() => Math.random() - 0.5);
+
+  shuffled.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = "optionBtn";
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(btn, opt, correct, key);
+    optionsArea.appendChild(btn);
+  });
+
+  speakPrompt(key);
+}
+
+/* CHECK ANSWER */
+function checkAnswer(btn, selected, correct, key) {
+  if (selected === correct) {
+    document.getElementById("message").textContent = "Great job!";
+    btn.classList.add("correctAnim");
+    const clap = document.getElementById("clapSound");
+    clap.currentTime = 0;
+    clap.play();
+    bigBounce();
+
+    setTimeout(() => {
+      index++;
+      if (index < keys.length) {
+        document.getElementById("message").textContent = "";
+        loadQuestion();
+      } else {
+        document.getElementById("message").textContent =
+          "You finished all " + currentMode + "! 🎉";
+        document.getElementById("progressBarInner").style.width = "100%";
+        launchConfetti();
+      }
+    }, 2000);
+  } else {
+    document.getElementById("message").textContent = "Try again!";
+    btn.classList.add("wrongAnim");
+    const no = document.getElementById("noSound");
+    no.currentTime = 0;
+    no.play();
+    setTimeout(() => btn.classList.remove("wrongAnim"), 400);
+  }
+}
+
+/* VOICE PRONUNCIATION */
+function speakPrompt(key) {
+  if (!("speechSynthesis" in window)) return;
+  let text = "";
+  if (currentMode === "letters") {
+    text = key + " for " + letterData[key][0].split(" ")[1];
+  } else if (currentMode === "numbers") {
+    text = "Number " + key;
+  } else if (currentMode === "shapes") {
+    text = key;
+  } else if (currentMode === "colors") {
+    text = key + " color";
+  }
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 0.9;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
+
+/* CARTOON BOUNCE ON CORRECT */
+function bigBounce() {
+  const box = document.getElementById("letterBox");
+  box.style.transform = "scale(1.2)";
+  setTimeout(() => box.style.transform = "scale(1)", 400);
+}
+
+/* CONFETTI */
+function launchConfetti() {
+  for (let i = 0; i < 80; i++) {
+    const conf = document.createElement("div");
+    conf.className = "confetti";
+    conf.style.left = Math.random() * 100 + "vw";
+    conf.style.backgroundColor =
+      ["#ff4081","#ffeb3b","#4caf50","#2196f3","#ff9800"][Math.floor(Math.random()*5)];
+    conf.style.animationDuration = (2 + Math.random()*1.5) + "s";
+    document.body.appendChild(conf);
+    setTimeout(() => conf.remove(), 3500);
+  }
+}
+
+/* BACK TO MENU */
+function backToMenu() {
+  document.getElementById("menu").style.display = "block";
+  document.getElementById("gameArea").style.display = "none";
+  document.getElementById("message").textContent = "";
+  document.getElementById("progressBarInner").style.width = "0%";
+}
+</script>
+
+</body>
+</html>

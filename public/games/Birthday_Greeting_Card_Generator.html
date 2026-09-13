@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern Occasion & Zodiac Card Studio</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Satisfy&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Canvas Confetti & html2canvas -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-luxury: 'Playfair Display', serif;
+      --font-cinzel: 'Cinzel', serif;
+      --font-handwriting: 'Satisfy', cursive;
+      --font-modern: 'Space Grotesk', sans-serif;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: #030712;
+      color: #f3f4f6;
+    }
+
+    /* Typography Classes */
+    .font-luxury { font-family: var(--font-luxury); }
+    .font-cinzel { font-family: var(--font-cinzel); }
+    .font-handwriting { font-family: var(--font-handwriting); }
+    .font-modern { font-family: var(--font-modern); }
+
+    /* Custom Glassmorphism */
+    .glass-panel {
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .card-glass-light {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.07);
+    }
+
+    .card-glass-dark {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Ambient Lighting & Glow FX */
+    .glow-aura {
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      filter: blur(70px);
+      pointer-events: none;
+      opacity: 0.45;
+      transition: all 0.7s ease;
+    }
+
+    /* Preset Background Art Styles */
+    .bg-preset-cosmic {
+      background: radial-gradient(circle at 20% 20%, #1e1b4b 0%, #0f172a 50%, #020617 100%);
+      color: #f8fafc;
+    }
+
+    .bg-preset-aurora {
+      background: linear-gradient(135deg, #052e16 0%, #0f172a 50%, #1e1b4b 100%);
+      color: #f8fafc;
+    }
+
+    .bg-preset-champagne {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 40%, #fde68a 100%);
+      color: #1e293b;
+    }
+
+    .bg-preset-sunset {
+      background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 40%, #fed7aa 100%);
+      color: #1e293b;
+    }
+
+    .bg-preset-rose {
+      background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 40%, #fecdd3 100%);
+      color: #1e293b;
+    }
+
+    .bg-preset-emerald {
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 40%, #a7f3d0 100%);
+      color: #064e3b;
+    }
+
+    .bg-preset-midnight {
+      background: radial-gradient(circle at top right, #311b92 0%, #0a0a23 60%, #020208 100%);
+      color: #f8fafc;
+    }
+
+    .bg-preset-spooky {
+      background: radial-gradient(circle at center, #2e1065 0%, #0f172a 60%, #030712 100%);
+      color: #f8fafc;
+    }
+
+    .bg-preset-cyber {
+      background: linear-gradient(135deg, #09090b 0%, #18181b 50%, #27272a 100%);
+      color: #f8fafc;
+    }
+
+    .bg-preset-frost {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+      color: #0c4a6e;
+    }
+
+    /* Custom Border Framings */
+    .frame-border-gold {
+      border: 2px solid transparent;
+      border-image: linear-gradient(135deg, #f59e0b, #d97706, #fef08a, #b45309) 1;
+    }
+
+    .frame-border-double {
+      outline: 2px solid currentColor;
+      outline-offset: -8px;
+    }
+
+    .frame-border-glowing {
+      box-shadow: 0 0 25px rgba(236, 72, 153, 0.3), inset 0 0 15px rgba(236, 72, 153, 0.2);
+    }
+
+    /* Print Formatting Rules */
+    @media print {
+      body {
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-card-wrapper {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .print-card-canvas {
+        box-shadow: none !important;
+        margin: 0 auto !important;
+        width: 190mm !important;
+        height: 270mm !important;
+        border-radius: 0 !important;
+        page-break-inside: avoid;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.4);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-3 md:p-6 lg:p-8">
+
+  <div class="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+    
+    <!-- CONTROLS & STUDIO PANEL -->
+    <div class="lg:col-span-5 glass-panel p-5 md:p-6 rounded-3xl no-print space-y-5 max-h-[92vh] overflow-y-auto">
+      
+      <!-- Header Bar -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 via-purple-500 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h1 class="text-base font-bold font-modern text-white tracking-wide">CardStudio Pro</h1>
+            <p class="text-xs text-slate-400">Next-Gen Modern Card Creator</p>
+          </div>
+        </div>
+        
+        <button type="button" onclick="generateRandomCard()" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 transition flex items-center gap-1.5 shadow-sm active:scale-95">
+          <i data-lucide="shuffle" class="w-3.5 h-3.5 text-pink-400"></i>
+          <span>Randomize</span>
+        </button>
+      </div>
+
+      <!-- OCCASION TABS -->
+      <div class="space-y-1.5">
+        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Select Theme & Occasion</label>
+        <div class="grid grid-cols-3 gap-1.5">
+          <button type="button" onclick="switchTab('zodiac')" id="tab-zodiac" class="px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md">
+            <i data-lucide="stars" class="w-3.5 h-3.5"></i>
+            <span>Zodiac</span>
+          </button>
+          <button type="button" onclick="switchTab('birthday')" id="tab-birthday" class="px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-slate-800/80 text-slate-400 hover:text-slate-200">
+            <i data-lucide="party-popper" class="w-3.5 h-3.5"></i>
+            <span>Birthday</span>
+          </button>
+          <button type="button" onclick="switchTab('anniversary')" id="tab-anniversary" class="px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-slate-800/80 text-slate-400 hover:text-slate-200">
+            <i data-lucide="heart" class="w-3.5 h-3.5"></i>
+            <span>Anniversary</span>
+          </button>
+          <button type="button" onclick="switchTab('halloween')" id="tab-halloween" class="px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-slate-800/80 text-slate-400 hover:text-slate-200">
+            <i data-lucide="ghost" class="w-3.5 h-3.5"></i>
+            <span>Halloween</span>
+          </button>
+          <button type="button" onclick="switchTab('award')" id="tab-award" class="px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-slate-800/80 text-slate-400 hover:text-slate-200">
+            <i data-lucide="award" class="w-3.5 h-3.5"></i>
+            <span>Award</span>
+          </button>
+          <button type="button" onclick="switchTab('holiday')" id="tab-holiday" class="px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-slate-800/80 text-slate-400 hover:text-slate-200">
+            <i data-lucide="snowflake" class="w-3.5 h-3.5"></i>
+            <span>Holiday</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- DYNAMIC TAB FORMS -->
+      <form id="studioForm" onsubmit="event.preventDefault();" class="space-y-4">
+
+        <!-- TAB 1: ZODIAC -->
+        <div id="form-zodiac" class="space-y-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Recipient Name</label>
+              <input type="text" id="zodiacName" value="Alex Johnson" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-pink-500 transition">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Zodiac Sign</label>
+              <select id="zodiacSign" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-pink-500 transition">
+                <option value="Aries">♈ Aries (Mar 21 - Apr 19)</option>
+                <option value="Taurus">♉ Taurus (Apr 20 - May 20)</option>
+                <option value="Gemini">♊ Gemini (May 21 - Jun 20)</option>
+                <option value="Cancer">♋ Cancer (Jun 21 - Jul 22)</option>
+                <option value="Leo" selected>♌ Leo (Jul 23 - Aug 22)</option>
+                <option value="Virgo">♍ Virgo (Aug 23 - Sep 22)</option>
+                <option value="Libra">♎ Libra (Sep 23 - Oct 22)</option>
+                <option value="Scorpio">♏ Scorpio (Oct 23 - Nov 21)</option>
+                <option value="Sagittarius">♐ Sagittarius (Nov 22 - Dec 21)</option>
+                <option value="Capricorn">♑ Capricorn (Dec 22 - Jan 19)</option>
+                <option value="Aquarius">♒ Aquarius (Jan 20 - Feb 18)</option>
+                <option value="Pisces">♓ Pisces (Feb 19 - Mar 20)</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Age / Turning</label>
+              <input type="text" id="zodiacAge" value="Turning 11" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-pink-500 transition">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Sub-title / Tag</label>
+              <input type="text" id="zodiacGrade" value="Grade 5 Star Leader" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-pink-500 transition">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Personal Birthday Wish</label>
+            <textarea id="zodiacWish" rows="2" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-pink-500 transition">May your solar return fill your year with courage, passion, and infinite achievements!</textarea>
+          </div>
+        </div>
+
+        <!-- TAB 2: BIRTHDAY -->
+        <div id="form-birthday" class="hidden space-y-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Birthday Person</label>
+              <input type="text" id="bdayName" value="Maya Patel" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Header Title</label>
+              <input type="text" id="bdayTitle" value="HAPPY BIRTHDAY" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Badge Tag</label>
+              <input type="text" id="bdayBadge" value="Sweet 16 Milestone" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Hero Emoji / Emblem</label>
+              <input type="text" id="bdayEmoji" value="🎂" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Birthday Wish</label>
+            <textarea id="bdayWish" rows="2" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">Wishing you a year ahead filled with unforgettable moments, endless cake, and happiness!</textarea>
+          </div>
+        </div>
+
+        <!-- TAB 3: ANNIVERSARY -->
+        <div id="form-anniversary" class="hidden space-y-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Couple Names</label>
+              <input type="text" id="anniNames" value="Sarah & James" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Milestone Years</label>
+              <input type="text" id="anniYears" value="10 Golden Years" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Love Note</label>
+            <textarea id="anniWish" rows="2" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">To a love that grows stronger and brighter with each passing day. Happy Anniversary!</textarea>
+          </div>
+        </div>
+
+        <!-- TAB 4: HALLOWEEN -->
+        <div id="form-halloween" class="hidden space-y-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Recipient Name</label>
+              <input type="text" id="spookyName" value="Monster Lucas" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Tagline</label>
+              <input type="text" id="spookyBadge" value="Trick or Treat Squad" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Spooky Greeting</label>
+            <textarea id="spookyWish" rows="2" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">Wishing you a night of eerie fun, spooky delights, and overflowing bags of candy!</textarea>
+          </div>
+        </div>
+
+        <!-- TAB 5: AWARD -->
+        <div id="form-award" class="hidden space-y-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Recipient</label>
+              <input type="text" id="awardName" value="Jordan Lee" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Award Title</label>
+              <input type="text" id="awardTitle" value="EXCELLENCE AWARD" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Commendation Note</label>
+            <textarea id="awardWish" rows="2" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">For exceptional leadership, academic brilliance, and inspiring positive change.</textarea>
+          </div>
+        </div>
+
+        <!-- TAB 6: HOLIDAY -->
+        <div id="form-holiday" class="hidden space-y-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Family / Name</label>
+              <input type="text" id="holidayName" value="The Miller Family" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Season Tag</label>
+              <input type="text" id="holidayBadge" value="Winter Magic 2026" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Holiday Message</label>
+            <textarea id="holidayWish" rows="2" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">May your home be warm, your spirits bright, and your holiday season filled with love.</textarea>
+          </div>
+        </div>
+
+        <!-- COMMON DESIGN STYLING PANEL -->
+        <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 space-y-3">
+          <h2 class="text-xs font-bold text-pink-400 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="palette" class="w-3.5 h-3.5"></i>
+            <span>Visual Aesthetics & Theme Options</span>
+          </h2>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Background Art</label>
+              <select id="selectBgStyle" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-pink-500 transition">
+                <option value="cosmic">🌌 Cosmic Starlight</option>
+                <option value="aurora">🌌 Northern Aurora</option>
+                <option value="champagne">🥂 Gold Champagne</option>
+                <option value="sunset">🌅 Sunset Warmth</option>
+                <option value="rose">🌸 Luxe Rose</option>
+                <option value="emerald">🌿 Emerald Luxe</option>
+                <option value="midnight">🌙 Midnight Velvet</option>
+                <option value="spooky">🎃 Spooky Purple</option>
+                <option value="cyber">⚡ Modern Cyber</option>
+                <option value="frost">❄️ Winter Frost</option>
+                <option value="customColor">🎨 Custom Gradient Color</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Card Border Frame</label>
+              <select id="selectFrameStyle" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-pink-500 transition">
+                <option value="gold">Golden Luxe Frame</option>
+                <option value="double">Classic Double Line</option>
+                <option value="glowing">Neon Ambient Glow</option>
+                <option value="solid">Minimalist Solid</option>
+                <option value="none">Borderless Clean</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Font Typography</label>
+              <select id="selectFontFamily" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-pink-500 transition">
+                <option value="font-luxury">Serif (Playfair Luxury)</option>
+                <option value="font-cinzel">Classic (Cinzel Royal)</option>
+                <option value="font-modern" selected>Modern (Space Grotesk)</option>
+                <option value="font-handwriting">Handwriting (Satisfy)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Illustration Overlay</label>
+              <select id="selectIllustrationSet" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none focus:border-pink-500 transition">
+                <option value="constellations">✨ Celestial Constellations</option>
+                <option value="balloons">🎈 Modern Balloons & Confetti</option>
+                <option value="botanicals">🌿 Elegant Botanicals</option>
+                <option value="hearts">💖 Floating Heart Gems</option>
+                <option value="spooky">👻 Halloween Spooktacular</option>
+                <option value="trophies">🏆 Trophies & Laurels</option>
+                <option value="snowflakes">❄️ Winter Snow Crystals</option>
+                <option value="none">🚫 Minimalist (No Stickers)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Custom Accent Color</label>
+              <input type="color" id="inputAccentColor" value="#ec4899" class="w-full h-8 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Custom Secondary Color</label>
+              <input type="color" id="inputSecondaryColor" value="#8b5cf6" class="w-full h-8 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Sender Signature</label>
+            <input type="text" id="inputSender" value="With best wishes, Ms. Davis & Class" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs outline-none">
+          </div>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="grid grid-cols-3 gap-2.5 pt-2">
+          <button type="button" onclick="triggerConfetti()" class="bg-gradient-to-r from-amber-500 to-pink-500 hover:from-amber-600 hover:to-pink-600 text-white font-bold py-2.5 px-3 rounded-xl shadow-lg transition text-xs flex items-center justify-center gap-1.5 active:scale-95">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span>Confetti</span>
+          </button>
+          
+          <button type="button" onclick="downloadCardImage()" class="bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold py-2.5 px-3 rounded-xl border border-slate-700 transition text-xs flex items-center justify-center gap-1.5 active:scale-95">
+            <i data-lucide="download" class="w-3.5 h-3.5 text-indigo-400"></i>
+            <span>Download PNG</span>
+          </button>
+
+          <button type="button" onclick="window.print()" class="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-2.5 px-3 rounded-xl shadow-lg transition text-xs flex items-center justify-center gap-1.5 active:scale-95">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+            <span>Print A4</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- GREETING CARD CANVAS PREVIEW (PRINT TARGET) -->
+    <div class="lg:col-span-7 flex flex-col items-center justify-center print-card-wrapper">
+      
+      <!-- Card Outer Shell -->
+      <div id="cardPreview" class="w-full max-w-lg rounded-[2.5rem] p-8 md:p-10 transition-all duration-500 bg-preset-cosmic print-card-canvas overflow-hidden relative min-h-[680px] flex flex-col justify-between shadow-2xl relative border border-white/10">
+        
+        <!-- Ambient Glow Elements -->
+        <div id="glowAura1" class="glow-aura -top-20 -left-20 bg-pink-500"></div>
+        <div id="glowAura2" class="glow-aura -bottom-20 -right-20 bg-purple-600"></div>
+
+        <!-- DECORATIVE ILLUSTRATION OVERLAY LAYER -->
+        <div id="illustrationOverlay" class="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          <!-- Injected via JavaScript -->
+        </div>
+
+        <!-- TOP HEADER RIBBON / BADGE -->
+        <div class="relative z-10 text-center space-y-3">
+          <div class="inline-flex items-center gap-2 px-5 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase bg-pink-500 text-white shadow-lg shadow-pink-500/30" id="cardRibbon">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span id="cardTitleDisplay">HAPPY BIRTHDAY</span>
+          </div>
+
+          <!-- Recipient Name -->
+          <h2 id="cardNameDisplay" class="text-4xl md:text-5xl font-extrabold tracking-tight drop-shadow-sm leading-tight">
+            Alex Johnson
+          </h2>
+          
+          <!-- Sub-header Tag Pills -->
+          <div class="flex items-center justify-center gap-2 text-xs font-bold opacity-90">
+            <span id="cardSub1Display" class="px-3.5 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 shadow-sm">Turning 11</span>
+            <span class="opacity-50">•</span>
+            <span id="cardSub2Display" class="px-3.5 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 shadow-sm">Grade 5 Star Leader</span>
+          </div>
+        </div>
+
+        <!-- HERO ASTROLOGY / OCCASION GLASS CARD -->
+        <div id="heroCardGlass" class="relative z-10 card-glass-dark rounded-3xl p-5 my-4 shadow-xl border overflow-hidden">
+          <div class="flex items-center justify-center gap-5">
+            <div class="relative flex-shrink-0">
+              <div id="cardHeroEmoji" class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-pink-500/20 to-purple-500/20 border border-white/20 flex items-center justify-center text-4xl shadow-inner transform hover:scale-105 transition duration-300">
+                ♌
+              </div>
+            </div>
+            
+            <div class="text-left space-y-1">
+              <span id="cardCategoryDisplay" class="text-[10px] font-black uppercase tracking-widest text-pink-400 block">Classroom Zodiac</span>
+              <h3 id="cardHeroTitle" class="text-2xl font-black leading-tight tracking-tight">
+                Leo the Bright Star
+              </h3>
+              <div class="flex items-center gap-2 pt-0.5">
+                <span id="cardHeroBadge" class="inline-flex items-center gap-1 text-[11px] font-bold px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  🔥 Fire Element
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CLASSROOM SUPERPOWERS / ZODIAC TRAITS GRID (Zodiac Tab Only) -->
+        <div id="zodiacTraitsSection" class="relative z-10 mb-3 space-y-2">
+          <h4 class="text-[10px] font-black uppercase tracking-widest text-center opacity-75">
+            ✨ Astrological Traits & Strengths ✨
+          </h4>
+          <div id="zodiacTraitsGrid" class="grid grid-cols-3 gap-2">
+            <!-- Dynamically Rendered -->
+          </div>
+        </div>
+
+        <!-- MAIN PERSONAL MESSAGE BOX -->
+        <div id="messageGlassBox" class="relative z-10 card-glass-dark rounded-2xl p-4 mb-3">
+          <div class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+            <i data-lucide="quote" class="w-3 h-3 text-pink-400"></i>
+            <span>Personal Wish & Reflection</span>
+          </div>
+          <p id="cardMainMessageDisplay" class="text-xs md:text-sm font-medium leading-relaxed opacity-95">
+            May your solar return fill your year with courage, passion, and infinite achievements!
+          </p>
+        </div>
+
+        <!-- FOOTER & SIGNATURE -->
+        <div class="relative z-10 border-t border-white/10 pt-3 flex justify-between items-end text-xs">
+          <div>
+            <span class="block text-[9px] uppercase font-black tracking-widest text-slate-400">Warm Regards</span>
+            <p id="cardSenderDisplay" class="font-handwriting text-xl md:text-2xl font-bold leading-none mt-1 text-pink-300">
+              With best wishes, Ms. Davis & Class
+            </p>
+          </div>
+          <div class="text-right flex items-center gap-1 text-slate-400 text-[10px]">
+            <i data-lucide="sparkles" class="w-4 h-4 text-pink-400"></i>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    let activeTab = 'zodiac';
+
+    // Comprehensive Astrology Database
+    const zodiacDatabase = {
+      Aries: { title: "Aries the Trailblazer", emoji: "♈", badge: "🔥 Fire Element", traits: [{icon: "rocket", title: "Bold Leader", desc: "Fearless pioneer"}, {icon: "zap", title: "High Energy", desc: "Passionate spirit"}, {icon: "target", title: "Goal Focused", desc: "Drives action"}], vibe: "Aries brings unstoppable courage and pioneering enthusiasm to our classroom! Always leading with a bright smile." },
+      Taurus: { title: "Taurus the Anchor", emoji: "♉", badge: "🌱 Earth Element", traits: [{icon: "shield", title: "Super Loyal", desc: "Stands by friends"}, {icon: "anchor", title: "Patience", desc: "Calm & steady"}, {icon: "palette", title: "Creative", desc: "Loves aesthetics"}], vibe: "Taurus is the steady anchor of our group! Reliable, kind, and immensely talented in everything they create." },
+      Gemini: { title: "Gemini the Explorer", emoji: "♊", badge: "💨 Air Element", traits: [{icon: "sparkles", title: "Curious Mind", desc: "Asks big questions"}, {icon: "message-circle", title: "Communicator", desc: "Expresses ideas"}, {icon: "cpu", title: "Quick Adapt", desc: "Sharp intellect"}], vibe: "Gemini keeps our environment full of joyful curiosity and brilliant ideas! A spark of inspiration." },
+      Cancer: { title: "Cancer the Class Heart", emoji: "♋", badge: "🌊 Water Element", traits: [{icon: "heart", title: "Empathic", desc: "Cares deeply"}, {icon: "feather", title: "Imaginative", desc: "Rich creative mind"}, {icon: "sun", title: "Nurturing", desc: "Brings warmth"}], vibe: "Cancer makes everyone feel welcomed and safe. Their big heart and empathy radiate throughout our room." },
+      Leo: { title: "Leo the Bright Star", emoji: "♌", badge: "🔥 Fire Element", traits: [{icon: "sun", title: "Natural Leader", desc: "Spreads sunshine"}, {icon: "crown", title: "Generous", desc: "Big-hearted warmth"}, {icon: "star", title: "Expressive", desc: "Inspires peers"}], vibe: "Leo fills the room with radiant warmth and enthusiastic energy! They shine brightest when uplifting others." },
+      Virgo: { title: "Virgo the Craftsman", emoji: "♍", badge: "🌱 Earth Element", traits: [{icon: "check-circle", title: "Detail Star", desc: "Notices everything"}, {icon: "compass", title: "Organized", desc: "Thoughtful mind"}, {icon: "help-circle", title: "Supportive", desc: "Always helps"}], vibe: "Virgo is organized, deeply thoughtful, and tremendously helpful. Their dedication elevates everyone around them." },
+      Libra: { title: "Libra the Harmony", emoji: "♎", badge: "💨 Air Element", traits: [{icon: "scale", title: "Fair Minded", desc: "Promotes balance"}, {icon: "users", title: "Collaborator", desc: "Great teammate"}, {icon: "smile", title: "Charming", desc: "Spreads joy"}], vibe: "Libra brings harmony and elegant teamwork wherever they go! Excellent at building peaceful bridges." },
+      Scorpio: { title: "Scorpio the Strategist", emoji: "♏", badge: "🌊 Water Element", traits: [{icon: "eye", title: "Deep Focus", desc: "Stays committed"}, {icon: "lock", title: "Loyal Friend", desc: "True & steadfast"}, {icon: "award", title: "Resilient", desc: "Overcomes all"}], vibe: "Scorpio approaches learning with unwavering determination and focus! Once committed, nothing stops them." },
+      Sagittarius: { title: "Sagittarius Voyager", emoji: "♐", badge: "🔥 Fire Element", traits: [{icon: "compass", title: "Optimist", desc: "Spreads joy"}, {icon: "book-open", title: "Wisdom", desc: "Loves learning"}, {icon: "globe", title: "Adventurer", desc: "Seeks horizons"}], vibe: "Sagittarius fills our days with laughter, optimism, and big exciting dreams! A true adventurous soul." },
+      Capricorn: { title: "Capricorn Achiever", emoji: "♑", badge: "🌱 Earth Element", traits: [{icon: "trophy", title: "Goal Setter", desc: "Aims for peaks"}, {icon: "shield-check", title: "Disciplined", desc: "Leads by example"}, {icon: "mountain", title: "Persistent", desc: "Never quits"}], vibe: "Capricorn sets inspiring standards of hard work and integrity! Showing us all how to achieve great dreams." },
+      Aquarius: { title: "Aquarius Visionary", emoji: "♒", badge: "💨 Air Element", traits: [{icon: "lightbulb", title: "Innovator", desc: "Original thinker"}, {icon: "zap", title: "Future Mind", desc: "Fresh perspective"}, {icon: "heart-handshake", title: "Humanitarian", desc: "Kind to all"}], vibe: "Aquarius brings inventive, out-of-the-box ideas to every project! A brilliant champion for friendship." },
+      Pisces: { title: "Pisces the Dreamer", emoji: "♓", badge: "🌊 Water Element", traits: [{icon: "palette", title: "Artistic", desc: "Creates magic"}, {icon: "cloud", title: "Intuitive", desc: "Understands peers"}, {icon: "sparkle", title: "Gentle Soul", desc: "Spreads peace"}], vibe: "Pisces brings artistic beauty and gentle empathy to our community! A wonderfully creative dreamer." }
+    };
+
+    // Vector SVG Overlay Generator
+    function updateIllustrationSet(setName) {
+      const overlay = document.getElementById('illustrationOverlay');
+      const map = {
+        constellations: `
+          <svg class="absolute top-2 left-2 w-32 h-32 opacity-25 text-current" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1"><circle cx="20" cy="20" r="2"/><circle cx="50" cy="30" r="1.5"/><circle cx="80" cy="15" r="2"/><line x1="20" y1="20" x2="50" y2="30"/><line x1="50" y1="30" x2="80" y2="15"/></svg>
+          <svg class="absolute bottom-2 right-2 w-40 h-40 opacity-20 text-current" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1"><polygon points="50,10 90,90 10,90"/><circle cx="50" cy="10" r="3"/><circle cx="90" cy="90" r="3"/><circle cx="10" cy="90" r="3"/></svg>
+        `,
+        balloons: `
+          <div class="absolute -top-4 left-4 text-4xl opacity-80 animate-bounce">🎈</div>
+          <div class="absolute top-6 right-4 text-5xl opacity-80">🎉</div>
+          <div class="absolute bottom-6 left-4 text-4xl opacity-75">🎁</div>
+          <div class="absolute -bottom-2 right-6 text-5xl opacity-80">✨</div>
+        `,
+        botanicals: `
+          <svg class="absolute top-0 left-0 w-32 h-32 opacity-30 text-emerald-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+          <div class="absolute bottom-4 right-4 text-4xl opacity-75">🌸</div>
+          <div class="absolute top-8 right-4 text-3xl opacity-75">🌿</div>
+        `,
+        hearts: `
+          <div class="absolute top-4 left-4 text-4xl opacity-80">💖</div>
+          <div class="absolute top-10 right-6 text-3xl opacity-75">💕</div>
+          <div class="absolute bottom-8 left-6 text-4xl opacity-80">💗</div>
+        `,
+        spooky: `
+          <div class="absolute top-4 left-4 text-4xl opacity-80">👻</div>
+          <div class="absolute top-8 right-6 text-4xl opacity-80">🦇</div>
+          <div class="absolute bottom-6 left-4 text-4xl opacity-80">🎃</div>
+        `,
+        trophies: `
+          <div class="absolute top-4 left-4 text-4xl opacity-80">🏆</div>
+          <div class="absolute top-8 right-6 text-4xl opacity-80">🎖️</div>
+          <div class="absolute bottom-6 left-4 text-4xl opacity-80">🏅</div>
+        `,
+        snowflakes: `
+          <div class="absolute top-4 left-4 text-4xl opacity-80">❄️</div>
+          <div class="absolute top-8 right-6 text-4xl opacity-80">☃️</div>
+          <div class="absolute bottom-6 left-4 text-4xl opacity-80">⭐</div>
+        `,
+        none: ``
+      };
+      overlay.innerHTML = map[setName] || map.constellations;
+    }
+
+    function switchTab(tabKey) {
+      activeTab = tabKey;
+      ['zodiac', 'birthday', 'anniversary', 'halloween', 'award', 'holiday'].forEach(t => {
+        const btn = document.getElementById(`tab-${t}`);
+        const formDiv = document.getElementById(`form-${t}`);
+        if (t === tabKey) {
+          btn.className = "px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md";
+          formDiv.classList.remove('hidden');
+        } else {
+          btn.className = "px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 bg-slate-800/80 text-slate-400 hover:text-slate-200";
+          formDiv.classList.add('hidden');
+        }
+      });
+
+      // Tab Preset Defaults
+      if (tabKey === 'zodiac') {
+        document.getElementById('selectBgStyle').value = 'cosmic';
+        document.getElementById('selectIllustrationSet').value = 'constellations';
+      } else if (tabKey === 'birthday') {
+        document.getElementById('selectBgStyle').value = 'sunset';
+        document.getElementById('selectIllustrationSet').value = 'balloons';
+      } else if (tabKey === 'anniversary') {
+        document.getElementById('selectBgStyle').value = 'champagne';
+        document.getElementById('selectIllustrationSet').value = 'hearts';
+      } else if (tabKey === 'halloween') {
+        document.getElementById('selectBgStyle').value = 'spooky';
+        document.getElementById('selectIllustrationSet').value = 'spooky';
+      } else if (tabKey === 'award') {
+        document.getElementById('selectBgStyle').value = 'aurora';
+        document.getElementById('selectIllustrationSet').value = 'trophies';
+      } else if (tabKey === 'holiday') {
+        document.getElementById('selectBgStyle').value = 'frost';
+        document.getElementById('selectIllustrationSet').value = 'snowflakes';
+      }
+
+      renderCard();
+    }
+
+    function renderCard() {
+      const zodiacTraitsSec = document.getElementById('zodiacTraitsSection');
+      const heroGlass = document.getElementById('heroCardGlass');
+      const messageGlass = document.getElementById('messageGlassBox');
+
+      if (activeTab === 'zodiac') {
+        zodiacTraitsSec.style.display = 'block';
+
+        const name = document.getElementById('zodiacName').value || 'Alex Johnson';
+        const signKey = document.getElementById('zodiacSign').value;
+        const age = document.getElementById('zodiacAge').value;
+        const grade = document.getElementById('zodiacGrade').value;
+        const wish = document.getElementById('zodiacWish').value;
+
+        const zodiac = zodiacDatabase[signKey] || zodiacDatabase.Leo;
+
+        document.getElementById('cardTitleDisplay').innerText = "HAPPY BIRTHDAY";
+        document.getElementById('cardNameDisplay').innerText = name;
+        document.getElementById('cardSub1Display').innerText = age;
+        document.getElementById('cardSub2Display').innerText = grade;
+        document.getElementById('cardCategoryDisplay').innerText = "Classroom Zodiac";
+        document.getElementById('cardHeroEmoji').innerText = zodiac.emoji;
+        document.getElementById('cardHeroTitle').innerText = zodiac.title;
+        document.getElementById('cardHeroBadge').innerText = zodiac.badge;
+        document.getElementById('cardMainMessageDisplay').innerText = `"${wish}"\n\n${zodiac.vibe}`;
+
+        // Render Traits Grid
+        document.getElementById('zodiacTraitsGrid').innerHTML = zodiac.traits.map(t => `
+          <div class="card-glass-dark p-2.5 rounded-xl text-center border border-white/10">
+            <i data-lucide="${t.icon}" class="w-4 h-4 mx-auto mb-1 text-pink-400"></i>
+            <span class="font-extrabold text-[10px] block leading-tight">${t.title}</span>
+            <span class="text-[8px] opacity-75 block mt-0.5">${t.desc}</span>
+          </div>
+        `).join('');
+
+      } else {
+        zodiacTraitsSec.style.display = 'none';
+
+        if (activeTab === 'birthday') {
+          document.getElementById('cardTitleDisplay').innerText = document.getElementById('bdayTitle').value;
+          document.getElementById('cardNameDisplay').innerText = document.getElementById('bdayName').value;
+          document.getElementById('cardSub1Display').innerText = document.getElementById('bdayBadge').value;
+          document.getElementById('cardSub2Display').innerText = "Celebration Day";
+          document.getElementById('cardCategoryDisplay').innerText = "Birthday Milestone";
+          document.getElementById('cardHeroEmoji').innerText = document.getElementById('bdayEmoji').value || "🎂";
+          document.getElementById('cardHeroTitle').innerText = "Joyful Birthday Wishes";
+          document.getElementById('cardHeroBadge').innerText = "🎉 Party Celebration";
+          document.getElementById('cardMainMessageDisplay').innerText = document.getElementById('bdayWish').value;
+        } else if (activeTab === 'anniversary') {
+          document.getElementById('cardTitleDisplay').innerText = "HAPPY ANNIVERSARY";
+          document.getElementById('cardNameDisplay').innerText = document.getElementById('anniNames').value;
+          document.getElementById('cardSub1Display').innerText = document.getElementById('anniYears').value;
+          document.getElementById('cardSub2Display').innerText = "Love & Togetherness";
+          document.getElementById('cardCategoryDisplay').innerText = "Anniversary Honor";
+          document.getElementById('cardHeroEmoji').innerText = "💍";
+          document.getElementById('cardHeroTitle').innerText = "A Decade of Love";
+          document.getElementById('cardHeroBadge').innerText = "💖 Golden Milestone";
+          document.getElementById('cardMainMessageDisplay').innerText = document.getElementById('anniWish').value;
+        } else if (activeTab === 'halloween') {
+          document.getElementById('cardTitleDisplay').innerText = "HAPPY HALLOWEEN";
+          document.getElementById('cardNameDisplay').innerText = document.getElementById('spookyName').value;
+          document.getElementById('cardSub1Display').innerText = document.getElementById('spookyBadge').value;
+          document.getElementById('cardSub2Display').innerText = "Trick or Treat";
+          document.getElementById('cardCategoryDisplay').innerText = "Spooky Season";
+          document.getElementById('cardHeroEmoji').innerText = "🎃";
+          document.getElementById('cardHeroTitle').innerText = "Spooktacular Fun!";
+          document.getElementById('cardHeroBadge').innerText = "👻 Ghostly Magic";
+          document.getElementById('cardMainMessageDisplay').innerText = document.getElementById('spookyWish').value;
+        } else if (activeTab === 'award') {
+          document.getElementById('cardTitleDisplay').innerText = document.getElementById('awardTitle').value;
+          document.getElementById('cardNameDisplay').innerText = document.getElementById('awardName').value;
+          document.getElementById('cardSub1Display').innerText = "Honor Student";
+          document.getElementById('cardSub2Display').innerText = "Excellence";
+          document.getElementById('cardCategoryDisplay').innerText = "Academic Recognition";
+          document.getElementById('cardHeroEmoji').innerText = "🏆";
+          document.getElementById('cardHeroTitle').innerText = "Outstanding Achievement";
+          document.getElementById('cardHeroBadge').innerText = "⭐ Golden Award";
+          document.getElementById('cardMainMessageDisplay').innerText = document.getElementById('awardWish').value;
+        } else if (activeTab === 'holiday') {
+          document.getElementById('cardTitleDisplay').innerText = "HAPPY HOLIDAYS";
+          document.getElementById('cardNameDisplay').innerText = document.getElementById('holidayName').value;
+          document.getElementById('cardSub1Display').innerText = document.getElementById('holidayBadge').value;
+          document.getElementById('cardSub2Display').innerText = "Season's Greetings";
+          document.getElementById('cardCategoryDisplay').innerText = "Winter Celebration";
+          document.getElementById('cardHeroEmoji').innerText = "❄️";
+          document.getElementById('cardHeroTitle').innerText = "Warmest Season Wishes";
+          document.getElementById('cardHeroBadge').innerText = "🎄 Festive Joy";
+          document.getElementById('cardMainMessageDisplay').innerText = document.getElementById('holidayWish').value;
+        }
+      }
+
+      // Sender
+      document.getElementById('cardSenderDisplay').innerText = document.getElementById('inputSender').value;
+
+      // Styling Options
+      const bgStyle = document.getElementById('selectBgStyle').value;
+      const frameStyle = document.getElementById('selectFrameStyle').value;
+      const fontFamily = document.getElementById('selectFontFamily').value;
+      const illustrationSet = document.getElementById('selectIllustrationSet').value;
+      const accentColor = document.getElementById('inputAccentColor').value;
+      const secondaryColor = document.getElementById('inputSecondaryColor').value;
+
+      const cardPreview = document.getElementById('cardPreview');
+
+      // Font Typography
+      cardPreview.className = cardPreview.className.replace(/font-\w+/g, '');
+      cardPreview.classList.add(fontFamily);
+
+      // Background Preset
+      if (bgStyle === 'customColor') {
+        cardPreview.style.background = `linear-gradient(135deg, ${accentColor} 0%, ${secondaryColor} 100%)`;
+      } else {
+        cardPreview.style.background = '';
+        cardPreview.className = cardPreview.className.replace(/bg-preset-\w+/g, '');
+        cardPreview.classList.add(`bg-preset-${bgStyle}`);
+      }
+
+      // Glass style adjustment for light/dark backgrounds
+      const isLightBg = ['champagne', 'sunset', 'rose', 'emerald', 'frost'].includes(bgStyle);
+      if (isLightBg) {
+        heroGlass.className = "relative z-10 card-glass-light rounded-3xl p-5 my-4 shadow-xl border overflow-hidden text-slate-900";
+        messageGlass.className = "relative z-10 card-glass-light rounded-2xl p-4 mb-3 text-slate-900";
+      } else {
+        heroGlass.className = "relative z-10 card-glass-dark rounded-3xl p-5 my-4 shadow-xl border overflow-hidden text-slate-100";
+        messageGlass.className = "relative z-10 card-glass-dark rounded-2xl p-4 mb-3 text-slate-100";
+      }
+
+      // Border Frames
+      cardPreview.classList.remove('frame-border-gold', 'frame-border-double', 'frame-border-glowing');
+      cardPreview.style.border = '';
+      if (frameStyle === 'gold') {
+        cardPreview.classList.add('frame-border-gold');
+      } else if (frameStyle === 'double') {
+        cardPreview.classList.add('frame-border-double');
+      } else if (frameStyle === 'glowing') {
+        cardPreview.classList.add('frame-border-glowing');
+      } else if (frameStyle === 'solid') {
+        cardPreview.style.border = `6px solid ${accentColor}`;
+      }
+
+      // Aura Glow colors
+      document.getElementById('glowAura1').style.backgroundColor = accentColor;
+      document.getElementById('glowAura2').style.backgroundColor = secondaryColor;
+      document.getElementById('cardRibbon').style.backgroundColor = accentColor;
+
+      // Illustration Overlay
+      updateIllustrationSet(illustrationSet);
+
+      // Re-initialize Lucide Icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    function generateRandomCard() {
+      const tabs = ['zodiac', 'birthday', 'anniversary', 'halloween', 'award', 'holiday'];
+      const randomTab = tabs[Math.floor(Math.random() * tabs.length)];
+      switchTab(randomTab);
+    }
+
+    function triggerConfetti() {
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 110, spread: 90, origin: { y: 0.6 } });
+      }
+    }
+
+    function downloadCardImage() {
+      const cardElement = document.getElementById('cardPreview');
+      if (typeof html2canvas === 'function') {
+        html2canvas(cardElement, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: null
+        }).then(canvas => {
+          const link = document.createElement('a');
+          link.download = `Greeting-Card-${Date.now()}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        });
+      }
+    }
+
+    // Attach Event Listeners
+    const allInputIds = [
+      'zodiacName', 'zodiacSign', 'zodiacAge', 'zodiacGrade', 'zodiacWish',
+      'bdayName', 'bdayTitle', 'bdayBadge', 'bdayEmoji', 'bdayWish',
+      'anniNames', 'anniYears', 'anniWish',
+      'spookyName', 'spookyBadge', 'spookyWish',
+      'awardName', 'awardTitle', 'awardWish',
+      'holidayName', 'holidayBadge', 'holidayWish',
+      'selectBgStyle', 'selectFrameStyle', 'selectFontFamily', 'selectIllustrationSet',
+      'inputAccentColor', 'inputSecondaryColor', 'inputSender'
+    ];
+
+    allInputIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('input', renderCard);
+        el.addEventListener('change', renderCard);
+      }
+    });
+
+    // Initial Load
+    switchTab('zodiac');
+  </script>
+</body>
+</html>

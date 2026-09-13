@@ -17,16 +17,71 @@
 
 require("dotenv").config({ path: `.env.${process.env.NODE_ENV || "local"}` });
 
+const fs = require("fs");
+const path = require("path");
+
+function refreshRuntimeEnv() {
+  const envFile = `.env.${process.env.NODE_ENV || "local"}`;
+  const envPath = path.join(__dirname, "..", envFile);
+
+  if (!fs.existsSync(envPath)) return;
+
+  const content = fs.readFileSync(envPath, "utf8");
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) continue;
+
+    const [key, ...rest] = trimmed.split("=");
+    const value = rest.join("=").trim();
+    if (!key) continue;
+
+    process.env[key.trim()] = value.replace(/^['"]|['"]$/g, "");
+  }
+}
+
+refreshRuntimeEnv();
+setInterval(refreshRuntimeEnv, 15000);
+
 const express = require("express");
 const cors    = require("cors");
-const path    = require("path");
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  next();
+});
 app.use(express.static(path.join(__dirname, "../public")));
+
+app.use("/local-games", (req, res, next) => {
+  const localPath = (process.env.GAME_LIBRARY_LOCAL_PATH || "").trim();
+  if (!localPath) {
+    return res.status(404).json({ success: false, error: "No local game source configured." });
+  }
+
+  const basePath = localPath.replace(/\//g, path.sep);
+  const requested = req.path.replace(/^\/+/, "");
+  const safePath = path.normalize(path.join(basePath, requested));
+
+  if (!safePath.startsWith(path.normalize(basePath))) {
+    return res.status(403).json({ success: false, error: "Invalid local game path." });
+  }
+
+  if (!fs.existsSync(safePath)) {
+    return res.status(404).json({ success: false, error: "Game file not found." });
+  }
+
+  if (fs.statSync(safePath).isDirectory()) {
+    return res.status(404).json({ success: false, error: "Directory listing is not allowed." });
+  }
+
+  return res.sendFile(safePath);
+});
 
 app.use("/api/portal", require("./routes/portal"));
 

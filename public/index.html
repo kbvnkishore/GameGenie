@@ -13,10 +13,82 @@
   <!-- ── HEADER ─────────────────────────────────────────────────────────── -->
   <header class="header">
     <div class="header-inner">
-      <div class="logo">🧞 GameGenie</div>
-      <div class="tagline">Think it. Create it. Play it!</div>
+      <div class="brand-block">
+        <div class="logo">🧞 GameGenie</div>
+        <div class="tagline">Think it. Create it. Play it!</div>
+      </div>
+      <div class="header-actions">
+        <div class="floating-controls">
+          <button id="themeModeButton" class="theme-toggle" type="button" aria-label="Switch to night mode">🌙</button>
+          <label class="music-select-wrap" for="musicSelect">
+            <span>🎵</span>
+            <select id="musicSelect" class="music-select" aria-label="Choose background music">
+              <option value="happy-horizon">Happy Horizon</option>
+              <option value="calm-ocean">Calm Ocean</option>
+              <option value="forest-glow">Forest Glow</option>
+              <option value="starry-night">Starry Night</option>
+            </select>
+          </label>
+          <label class="volume-control" for="musicVolume">
+            <span>🔉</span>
+            <input id="musicVolume" type="range" min="0" max="100" value="45" aria-label="Adjust music volume" />
+          </label>
+          <button id="muteButton" class="mute-button" type="button" aria-label="Mute background music">🔊</button>
+        </div>
+        <button id="aboutButton" class="about-button" type="button" aria-label="About GameGenie">About</button>
+      </div>
     </div>
   </header>
+
+  <div id="aboutModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-close="true"></div>
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+      <div class="modal-header">
+        <div>
+          <p class="modal-kicker">About</p>
+          <h3 id="aboutTitle">GameGenie Kids Portal</h3>
+        </div>
+        <button class="modal-close" type="button" aria-label="Close about panel" onclick="closeAboutModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <p>
+          GameGenie is a playful learning portal where kids can explore themed game ideas,
+          discover featured games, and turn simple concepts into interactive experiences.
+        </p>
+
+        <div class="about-grid">
+          <div class="about-item">
+            <span class="about-icon">💡</span>
+            <div>
+              <h4>1. Spark ideas</h4>
+              <p>Use the daily challenge and enter a game concept in the idea box.</p>
+            </div>
+          </div>
+
+          <div class="about-item">
+            <span class="about-icon">🎮</span>
+            <div>
+              <h4>2. Browse the library</h4>
+              <p>Open the Featured, All Games, or Kid-Made tabs to explore available content.</p>
+            </div>
+          </div>
+
+          <div class="about-item">
+            <span class="about-icon">📁</span>
+            <div>
+              <h4>3. Load your own games</h4>
+              <p>Paste a public S3 URL or a local folder path to instantly load HTML-based games.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-note">
+          <strong>Best for:</strong> classrooms, learning centers, kids clubs, and creative coding experiences.
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ── MAIN ───────────────────────────────────────────────────────────── -->
   <main class="main">
@@ -33,24 +105,47 @@
     </section>
 
     <!-- Game Idea Box -->
-    <section class="card idea-card">
-      <div class="card-header">
-        <span class="section-icon">💡</span>
-        <h2>Got a Game Idea?</h2>
+    <section class="card idea-card chat-shell">
+      <div class="card-header chat-header">
+        <div class="chat-title-wrap">
+          <span class="section-icon">💡</span>
+          <h2>Game Chat</h2>
+        </div>
       </div>
-      <p class="idea-subtitle">Tell GameGenie your idea and watch it come to life! ✨</p>
-      <div class="idea-form">
-        <textarea
-          id="ideaInput"
-          placeholder="Example: A game where a cat collects fish while avoiding dogs... 🐱🐟"
-          maxlength="500"
-          rows="4"
-        ></textarea>
-        <div class="idea-footer">
-          <span id="charCount" class="char-count">0 / 500</span>
-          <button id="submitIdea" class="btn btn-primary" onclick="submitIdea()">
-            🪄 Create My Game!
-          </button>
+      <div class="chat-panel">
+        <div id="ideaChatLog" class="idea-chat-log" aria-live="polite"></div>
+
+        <div class="chat-composer">
+          <div class="idea-input-wrap">
+            <textarea
+              id="ideaInput"
+              placeholder="Tell me about the game you want..."
+              maxlength="500"
+              rows="3"
+            ></textarea>
+            <button id="voiceIdeaButton" class="voice-button" type="button" aria-label="Speak your game idea">
+              🎙️
+            </button>
+          </div>
+
+          <div class="composer-row">
+            <div id="charCount" class="char-count">0 / 500</div>
+            <div class="idea-actions">
+              <button id="clearChatButton" class="btn btn-secondary" type="button" onclick="resetConversation()">
+                🗑️ Clear
+              </button>
+              <button id="sendIdeaButton" class="btn btn-secondary" type="button" onclick="sendMessage()">
+                ➤ Send
+              </button>
+            </div>
+          </div>
+
+          <div class="cta-row">
+            <div class="cta-copy">When your idea feels ready, turn it into a game.</div>
+            <button id="submitIdea" class="btn btn-primary create-game-button" onclick="submitIdea()">
+              🪄 Create My Game!
+            </button>
+          </div>
         </div>
       </div>
 
@@ -71,6 +166,25 @@
       </div>
       <div id="gamesGrid" class="games-grid">
         <div class="loading-dots">Loading games<span>.</span><span>.</span><span>.</span></div>
+      </div>
+    </section>
+
+    <!-- Game Source -->
+    <section class="card source-card">
+      <div class="card-header">
+        <span class="section-icon">📁</span>
+        <h2>Game Source</h2>
+      </div>
+      <p class="idea-subtitle">Paste a public S3 folder URL or a local folder path containing HTML games, then load them instantly.</p>
+      <div class="source-form">
+        <input
+          id="gameSourceInput"
+          type="text"
+          placeholder="Example: https://my-bucket.s3.amazonaws.com/games or C:\ChildrenFunGames"
+        />
+        <button id="applyGameSource" class="btn btn-primary" onclick="applyGameSource()">
+          Load Games
+        </button>
       </div>
     </section>
 

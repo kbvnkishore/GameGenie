@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dino Runner - Prehistoric Dash</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    font-family: 'Comic Sans MS', 'Chalkboard SE', 'Fredoka One', sans-serif;
+  }
+
+  body {
+    background: #1a2a3a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  #gameContainer {
+    position: relative;
+    width: 800px;
+    height: 450px;
+    background: #87CEEB;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Overlay UI Screens */
+  .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.94);
+    padding: 20px;
+    text-align: center;
+    z-index: 10;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  h1 {
+    font-size: 34px;
+    color: #FF5722;
+    text-shadow: 2px 2px 0 #FFF, 3px 3px 0 #333;
+    margin-bottom: 10px;
+  }
+
+  h2 {
+    font-size: 22px;
+    color: #4CAF50;
+    margin-bottom: 10px;
+  }
+
+  .section-label {
+    font-size: 15px;
+    font-weight: bold;
+    color: #444;
+    margin: 8px 0 4px;
+  }
+
+  /* Character Selector */
+  .char-grid {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .char-card {
+    width: 85px;
+    height: 80px;
+    border-radius: 14px;
+    background: #FFF;
+    border: 4px solid #DDD;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+
+  .char-card:hover {
+    transform: scale(1.08);
+  }
+
+  .char-card.selected {
+    border-color: #FF9800;
+    background: #FFF8E1;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+  }
+
+  .char-card .emoji {
+    font-size: 32px;
+    transform: scaleX(-1);
+    display: inline-block;
+  }
+
+  .char-card .name {
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+  }
+
+  .char-card .world-tag {
+    font-size: 9px;
+    color: #777;
+    margin-top: 2px;
+  }
+
+  /* Settings Row */
+  .settings-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .time-options {
+    display: flex;
+    gap: 6px;
+  }
+
+  .opt-btn {
+    padding: 6px 12px;
+    border-radius: 16px;
+    border: 3px solid #4CAF50;
+    background: #FFF;
+    color: #4CAF50;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+
+  .opt-btn.selected {
+    background: #4CAF50;
+    color: #FFF;
+  }
+
+  /* Speed Slider */
+  .slider-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #F0F0F0;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 2px solid #CCC;
+    font-weight: bold;
+    font-size: 14px;
+    color: #333;
+  }
+
+  .slider-container input[type=range] {
+    cursor: pointer;
+    width: 100px;
+  }
+
+  /* Big Buttons */
+  .btn-main {
+    padding: 12px 36px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #FFF;
+    background: #FF5722;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 5px 0 #E64A19;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+
+  .btn-main:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #E64A19;
+  }
+
+  .high-score-tag {
+    margin-top: 10px;
+    font-size: 16px;
+    color: #795548;
+    font-weight: bold;
+  }
+
+  /* HUD */
+  #hud {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .hud-box {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    border: 2px solid #333;
+  }
+
+  #stopBtn {
+    pointer-events: auto;
+    background: #E91E63;
+    color: white;
+    border: 2px solid #333;
+    border-radius: 16px;
+    padding: 6px 14px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  /* Big Touch Jump Button */
+  #touchJumpBtn {
+    position: absolute;
+    bottom: 15px;
+    right: 20px;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: #FF9800;
+    border: 5px solid #FFF;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+    cursor: pointer;
+    z-index: 6;
+    touch-action: manipulation;
+  }
+
+  #touchJumpBtn:active {
+    transform: scale(0.92);
+    background: #FF5722;
+  }
+</style>
+</head>
+<body>
+
+<div id="gameContainer">
+  <canvas id="gameCanvas" width="800" height="450"></canvas>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-box">⭐ Score: <span id="scoreVal">0</span></div>
+    <div class="hud-box">⏱️ <span id="timerVal">01:00</span></div>
+    <div class="slider-container" style="pointer-events: auto;">
+      ⚡ Speed: <input type="range" id="hudSpeedSlider" min="3" max="10" value="5" oninput="updateSpeedFromSlider(this.value)">
+    </div>
+    <button id="stopBtn" onclick="pauseGame()">⏸️ Pause</button>
+  </div>
+
+  <!-- Big On-screen Jump Button -->
+  <div id="touchJumpBtn" class="hidden">JUMP!</div>
+
+  <!-- Start / Main Menu Screen -->
+  <div id="startScreen" class="overlay">
+    <h1>🦖 ANIMAL RUNNER 🦕</h1>
+    
+    <div class="section-label">SELECT YOUR HERO & WORLD:</div>
+    <div class="char-grid" id="charGrid"></div>
+
+    <div class="section-label">PLAY TIME & SPEED:</div>
+    <div class="settings-row">
+      <div class="time-options" id="timeOptions">
+        <button class="opt-btn selected" onclick="selectTime(1, this)">1 Min</button>
+        <button class="opt-btn" onclick="selectTime(2, this)">2 Min</button>
+        <button class="opt-btn" onclick="selectTime(3, this)">3 Min</button>
+        <button class="opt-btn" onclick="selectTime(4, this)">4 Min</button>
+        <button class="opt-btn" onclick="selectTime(5, this)">5 Min</button>
+      </div>
+
+      <div class="slider-container">
+        ⚡ Speed: <input type="range" id="menuSpeedSlider" min="3" max="10" value="5" oninput="updateSpeedFromSlider(this.value)">
+        <span id="speedValText">5</span>
+      </div>
+    </div>
+
+    <button class="btn-main" onclick="startGame()">PLAY GAME ▶</button>
+    <div class="high-score-tag">🏆 Highest Score: <span id="highScoreVal">0</span></div>
+  </div>
+
+  <!-- Pause Screen -->
+  <div id="pauseScreen" class="overlay hidden">
+    <h2>PAUSED ⏸️</h2>
+    <div style="display: flex; gap: 15px; margin-top: 20px;">
+      <button class="btn-main" style="background:#4CAF50; box-shadow: 0 5px 0 #388E3C;" onclick="resumeGame()">RESUME</button>
+      <button class="btn-main" style="background:#E91E63; box-shadow: 0 5px 0 #C2185B;" onclick="quitToMenu()">QUIT</button>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameOverScreen" class="overlay hidden">
+    <h1 id="endTitle">TIME'S UP! 🎉</h1>
+    <h2>Final Score: <span id="finalScoreVal">0</span></h2>
+    <p id="newHighTag" style="color: #FF9800; font-size: 22px; font-weight: bold; margin: 10px 0;" class="hidden">🌟 NEW HIGH SCORE! 🌟</p>
+    <div style="display: flex; gap: 15px; margin-top: 15px;">
+      <button class="btn-main" onclick="startGame()">PLAY AGAIN 🔄</button>
+      <button class="btn-main" style="background:#2196F3; box-shadow: 0 5px 0 #1976D2;" onclick="quitToMenu()">MENU 🏠</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- CUSTOM WORLDS & ANIMAL DATA ---
+const CHARACTERS = [
+  { 
+    id: 'dino', name: 'Dino', emoji: '🦖', worldName: 'Jurassic World', jumpFreq: 260,
+    skyColor: '#87CEEB', groundColor: '#8BC34A', groundDark: '#689F38', hillColor: '#A8E6CF',
+    sunEmoji: '☀️', collectibles: ['🥚', '⭐'], obstacles: ['🪨', '🪵'],
+    musicNotes: [261.63, 329.63, 392.00, 329.63, 261.63, 329.63, 392.00, 523.25], tempo: 240, wave: 'sine'
+  },
+  { 
+    id: 'chick', name: 'Chick', emoji: '🐥', worldName: 'Sunny Meadow', jumpFreq: 450,
+    skyColor: '#B0E0E6', groundColor: '#CDDC39', groundDark: '#AFB42B', hillColor: '#DCEDC8',
+    sunEmoji: '☀️', collectibles: ['🌾', '🌽'], obstacles: ['🪵', '🌾'],
+    musicNotes: [392.00, 440.00, 493.88, 523.25, 493.88, 440.00, 392.00, 523.25], tempo: 180, wave: 'triangle'
+  },
+  { 
+    id: 'hippo', name: 'Hippo', emoji: '🦛', worldName: 'River Marsh', jumpFreq: 180,
+    skyColor: '#E0F7FA', groundColor: '#009688', groundDark: '#00695C', hillColor: '#80CBC4',
+    sunEmoji: '🌅', collectibles: ['🍉', '🪷'], obstacles: ['🪨', '🧼'],
+    musicNotes: [130.81, 164.81, 196.00, 164.81, 130.81, 196.00, 164.81, 261.63], tempo: 280, wave: 'sine'
+  },
+  { 
+    id: 'pig', name: 'Pig', emoji: '🐖', worldName: 'Muddy Barn', jumpFreq: 350,
+    skyColor: '#FFE0B2', groundColor: '#8D6E63', groundDark: '#5D4037', hillColor: '#D7CCC8',
+    sunEmoji: '☀️', collectibles: ['🍎', '🥕'], obstacles: ['🧼', '🪵'],
+    musicNotes: [293.66, 369.99, 440.00, 369.99, 293.66, 440.00, 369.99, 587.33], tempo: 210, wave: 'square'
+  },
+  { 
+    id: 'horse', name: 'Horse', emoji: '🐎', worldName: 'Golden Ranch', jumpFreq: 300,
+    skyColor: '#FFF9C4', groundColor: '#FBC02D', groundDark: '#F57F17', hillColor: '#FFF59D',
+    sunEmoji: '🌤️', collectibles: ['🍏', '🧲'], obstacles: ['🪵', '🌾'],
+    musicNotes: [220.00, 277.18, 329.63, 277.18, 220.00, 329.63, 277.18, 440.00], tempo: 200, wave: 'triangle'
+  },
+  { 
+    id: 'mouse', name: 'Mouse', emoji: '🐭', worldName: 'Cozy Kitchen', jumpFreq: 500,
+    skyColor: '#F5F5F5', groundColor: '#B0BEC5', groundDark: '#78909C', hillColor: '#E0E0E0',
+    sunEmoji: '🧀', collectibles: ['🧀', '🍪'], obstacles: ['🪤', '🥫'],
+    musicNotes: [523.25, 659.25, 783.99, 659.25, 523.25, 783.99, 659.25, 1046.50], tempo: 160, wave: 'sine'
+  }
+];
+
+// --- AUDIO SYNTHESIZER ---
+class SoundEffects {
+  constructor() {
+    this.ctx = null;
+    this.bgmInterval = null;
+    this.bgmStep = 0;
+  }
+
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  playJump(freq = 300) {
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(freq * 2.2, this.ctx.currentTime + 0.18);
+    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.18);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.18);
+  }
+
+  playStar() {
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(523.25, this.ctx.currentTime);
+    osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.08);
+    osc.frequency.setValueAtTime(783.99, this.ctx.currentTime + 0.16);
+    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.3);
+  }
+
+  playBump() {
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(60, this.ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.15);
+  }
+
+  startBGM(charObj) {
+    this.init();
+    this.stopBGM();
+    this.bgmStep = 0;
+
+    const notes = charObj.musicNotes;
+    const tempo = charObj.tempo;
+    const waveType = charObj.wave;
+
+    this.bgmInterval = setInterval(() => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = waveType;
+      osc.frequency.setValueAtTime(notes[this.bgmStep % notes.length], this.ctx.currentTime);
+      gain.gain.setValueAtTime(waveType === 'square' ? 0.015 : 0.04, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.18);
+      this.bgmStep++;
+    }, tempo);
+  }
+
+  stopBGM() {
+    if (this.bgmInterval) {
+      clearInterval(this.bgmInterval);
+      this.bgmInterval = null;
+    }
+  }
+}
+
+const sounds = new SoundEffects();
+
+// --- GAME STATE & VARIABLES ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let selectedChar = CHARACTERS[0];
+let selectedDuration = 1; // minutes
+let gameSpeed = 5;
+let gameState = 'MENU';
+
+let score = 0;
+let timeRemaining = 60;
+let timerInterval = null;
+let animationFrameId = null;
+
+let highScore = parseInt(localStorage.getItem('dino_runner_highscore') || '0');
+document.getElementById('highScoreVal').innerText = highScore;
+
+// --- GAME OBJECTS ---
+const player = {
+  x: 100,
+  y: 300,
+  size: 55,
+  vy: 0,
+  gravity: 0.75,
+  jumpPower: -14,
+  isGrounded: true,
+  bounceAngle: 0
+};
+
+let groundY = 350;
+let bgOffset = 0;
+let obstacles = [];
+let collectibles = [];
+
+// --- INITIALIZE MENU ---
+function initMenu() {
+  const charGrid = document.getElementById('charGrid');
+  charGrid.innerHTML = '';
+  CHARACTERS.forEach(c => {
+    const card = document.createElement('div');
+    card.className = `char-card ${c.id === selectedChar.id ? 'selected' : ''}`;
+    card.innerHTML = `
+      <span class="emoji">${c.emoji}</span>
+      <span class="name">${c.name}</span>
+      <span class="world-tag">${c.worldName}</span>
+    `;
+    card.onclick = () => {
+      document.querySelectorAll('.char-card').forEach(el => el.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedChar = c;
+      sounds.playJump(c.jumpFreq);
+    };
+    charGrid.appendChild(card);
+  });
+}
+
+function selectTime(mins, btn) {
+  selectedDuration = mins;
+  document.querySelectorAll('#timeOptions .opt-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function updateSpeedFromSlider(val) {
+  gameSpeed = parseFloat(val);
+  document.getElementById('menuSpeedSlider').value = val;
+  document.getElementById('hudSpeedSlider').value = val;
+  document.getElementById('speedValText').innerText = val;
+}
+
+// --- JUMP CONTROLS ---
+function triggerJump() {
+  if (gameState === 'PLAYING' && player.isGrounded) {
+    player.vy = player.jumpPower;
+    player.isGrounded = false;
+    sounds.playJump(selectedChar.jumpFreq);
+  }
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') {
+    e.preventDefault();
+    triggerJump();
+  }
+});
+
+canvas.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  triggerJump();
+});
+
+const touchBtn = document.getElementById('touchJumpBtn');
+touchBtn.addEventListener('pointerdown', (e) => {
+  e.stopPropagation();
+  e.preventDefault();
+  triggerJump();
+});
+
+// --- GAME LOGIC ---
+function startGame() {
+  sounds.startBGM(selectedChar);
+
+  score = 0;
+  timeRemaining = selectedDuration * 60;
+  obstacles = [];
+  collectibles = [];
+  player.y = groundY - player.size;
+  player.vy = 0;
+  player.isGrounded = true;
+
+  document.getElementById('scoreVal').innerText = score;
+  updateTimerDisplay();
+  document.getElementById('startScreen').classList.add('hidden');
+  document.getElementById('pauseScreen').classList.add('hidden');
+  document.getElementById('gameOverScreen').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  document.getElementById('touchJumpBtn').classList.remove('hidden');
+
+  gameState = 'PLAYING';
+
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (gameState === 'PLAYING') {
+      timeRemaining--;
+      updateTimerDisplay();
+      if (timeRemaining <= 0) {
+        endGame();
+      }
+    }
+  }, 1000);
+
+  cancelAnimationFrame(animationFrameId);
+  animationFrameId = requestAnimationFrame(gameLoop);
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+  const s = (timeRemaining % 60).toString().padStart(2, '0');
+  document.getElementById('timerVal').innerText = `${m}:${s}`;
+}
+
+function pauseGame() {
+  if (gameState === 'PLAYING') {
+    gameState = 'PAUSED';
+    sounds.stopBGM();
+    document.getElementById('pauseScreen').classList.remove('hidden');
+  }
+}
+
+function resumeGame() {
+  if (gameState === 'PAUSED') {
+    gameState = 'PLAYING';
+    sounds.startBGM(selectedChar);
+    document.getElementById('pauseScreen').classList.add('hidden');
+    animationFrameId = requestAnimationFrame(gameLoop);
+  }
+}
+
+function quitToMenu() {
+  gameState = 'MENU';
+  sounds.stopBGM();
+  clearInterval(timerInterval);
+  document.getElementById('startScreen').classList.remove('hidden');
+  document.getElementById('pauseScreen').classList.add('hidden');
+  document.getElementById('gameOverScreen').classList.add('hidden');
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('touchJumpBtn').classList.add('hidden');
+}
+
+function endGame() {
+  gameState = 'GAMEOVER';
+  sounds.stopBGM();
+  clearInterval(timerInterval);
+
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('touchJumpBtn').classList.add('hidden');
+  document.getElementById('gameOverScreen').classList.remove('hidden');
+  document.getElementById('finalScoreVal').innerText = score;
+
+  const isNewHigh = score > highScore;
+  if (isNewHigh) {
+    highScore = score;
+    localStorage.setItem('dino_runner_highscore', highScore.toString());
+    document.getElementById('highScoreVal').innerText = highScore;
+    document.getElementById('newHighTag').classList.remove('hidden');
+  } else {
+    document.getElementById('newHighTag').classList.add('hidden');
+  }
+}
+
+// --- SPAWN LOGIC ---
+let spawnTimer = 0;
+function handleSpawns() {
+  spawnTimer++;
+  if (spawnTimer > Math.max(40, 100 - gameSpeed * 5)) {
+    spawnTimer = 0;
+    
+    // Pick character-specific items
+    const obsEmoji = selectedChar.obstacles[Math.floor(Math.random() * selectedChar.obstacles.length)];
+    const colEmoji = selectedChar.collectibles[Math.floor(Math.random() * selectedChar.collectibles.length)];
+
+    if (Math.random() < 0.65) {
+      obstacles.push({
+        x: canvas.width + 30,
+        y: groundY - 35,
+        width: 35,
+        height: 35,
+        type: obsEmoji
+      });
+    }
+    if (Math.random() < 0.75) {
+      collectibles.push({
+        x: canvas.width + 70,
+        y: groundY - 60 - Math.random() * 90,
+        size: 30,
+        type: colEmoji
+      });
+    }
+  }
+}
+
+// --- GAME LOOP ---
+function gameLoop() {
+  if (gameState !== 'PLAYING') return;
+
+  player.vy += player.gravity;
+  player.y += player.vy;
+
+  if (player.y >= groundY - player.size) {
+    player.y = groundY - player.size;
+    player.vy = 0;
+    player.isGrounded = true;
+  }
+
+  player.bounceAngle += 0.2;
+  bgOffset += gameSpeed * 0.5;
+
+  handleSpawns();
+
+  // Update Obstacles
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    let obs = obstacles[i];
+    obs.x -= gameSpeed;
+
+    if (
+      player.x < obs.x + obs.width &&
+      player.x + player.size > obs.x &&
+      player.y < obs.y + obs.height &&
+      player.y + player.size > obs.y
+    ) {
+      sounds.playBump();
+      score = Math.max(0, score - 2);
+      document.getElementById('scoreVal').innerText = score;
+      obstacles.splice(i, 1);
+      continue;
+    }
+
+    if (obs.x < -50) obstacles.splice(i, 1);
+  }
+
+  // Update Collectibles
+  for (let i = collectibles.length - 1; i >= 0; i--) {
+    let col = collectibles[i];
+    col.x -= gameSpeed;
+
+    let cx = col.x + col.size / 2;
+    let cy = col.y + col.size / 2;
+    let px = player.x + player.size / 2;
+    let py = player.y + player.size / 2;
+    let dist = Math.hypot(cx - px, cy - py);
+
+    if (dist < player.size / 2 + col.size / 2) {
+      sounds.playStar();
+      score += 10;
+      document.getElementById('scoreVal').innerText = score;
+      collectibles.splice(i, 1);
+      continue;
+    }
+
+    if (col.x < -50) collectibles.splice(i, 1);
+  }
+
+  draw();
+  animationFrameId = requestAnimationFrame(gameLoop);
+}
+
+// --- RENDER WORLDS ---
+function draw() {
+  // World Specific Sky
+  ctx.fillStyle = selectedChar.skyColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // World Specific Sun/Celestial
+  ctx.font = '50px sans-serif';
+  ctx.fillText(selectedChar.sunEmoji, 710, 80);
+
+  // Background Parallax Hills
+  ctx.fillStyle = selectedChar.hillColor;
+  ctx.beginPath();
+  ctx.arc(((100 - bgOffset * 0.2) % 1000) + 200, 380, 200, 0, Math.PI * 2);
+  ctx.arc(((600 - bgOffset * 0.2) % 1000) + 200, 400, 250, 0, Math.PI * 2);
+  ctx.fill();
+
+  // World Specific Ground
+  ctx.fillStyle = selectedChar.groundColor;
+  ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+  ctx.fillStyle = selectedChar.groundDark;
+  ctx.fillRect(0, groundY + 12, canvas.width, canvas.height - groundY - 12);
+
+  // Draw Collectibles
+  collectibles.forEach(col => {
+    ctx.font = '32px sans-serif';
+    ctx.fillText(col.type, col.x, col.y + 25);
+  });
+
+  // Draw Obstacles
+  obstacles.forEach(obs => {
+    ctx.font = '30px sans-serif';
+    ctx.fillText(obs.type, obs.x, obs.y + 28);
+  });
+
+  // Draw Player Character (Flipped Horizontally to face forward)
+  ctx.save();
+  ctx.translate(player.x + player.size / 2, player.y + player.size / 2);
+  ctx.scale(-1, 1);
+  ctx.font = '48px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  let bobY = player.isGrounded ? Math.sin(player.bounceAngle) * 3 : 0;
+  ctx.fillText(selectedChar.emoji, 0, bobY);
+  ctx.restore();
+}
+
+// Start Menu Setup
+initMenu();
+</script>
+</body>
+</html>

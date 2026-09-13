@@ -1,263 +1,194 @@
 # GameGenie
 
-Updates:
- - Added lightweight agent metadata files for `game-genie` and `kids-game-portal` to help tooling and maintainers: see `agents/*/.agent.md` and `agents/*/.instructions.md`.
- - Added `AGENTS.md` and `copilot-instructions.md` to document agents and assistant guidelines.
+> AI-powered kids gaming portal that turns ideas into playable games.
 
-Run tests:
-```bash
-npm install
-npm test
-```
-This repository contains an AI-powered gaming platform for kids.
-
-Updates:
- - Added lightweight agent metadata files for `game-genie` and `kids-game-portal` to help tooling and maintainers: see `agents/*/.agent.md` and `agents/*/.instructions.md`.
- - Added `AGENTS.md` and `copilot-instructions.md` to document agents and assistant guidelines.
-
-Run tests:
-```bash
-npm install
-npm test
-```
-# GameGenie
-
-> AI-powered gaming portal for kids - think it, create it, play it!
-
-[![GitHub](https://img.shields.io/github/last-commit/kbvnkishore/GameGenie)](https://github.com/kbvnkishore/GameGenie)
-[![Node](https://img.shields.io/badge/node-v24-green)](https://nodejs.org)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+GameGenie is a kid-friendly portal where children can browse games, respond to a daily challenge, and turn their ideas into playable web games. The experience is designed around a warm, encouraging chat flow with a clean interface, multi-turn idea building, theme switching, and a more polished ambient music system.
 
 ---
 
-## What is GameGenie?
+## Highlights
 
-GameGenie is a kids gaming portal powered by two AWS Bedrock AI agents.
-Kids visit the website, see a daily problem/challenge, browse pre-selected games,
-and submit their own game ideas. The AI turns their idea into a playable game
-and adds it to the library in real time.
+- Child-friendly portal UI with a modern, playful layout
+- Multi-turn conversation flow before creating a game
+- Enter-to-send behavior in the idea box
+- Clear/reset chat action for a fresh start
+- Day and night mode with consistent full-page styling
+- Soft, selectable ambient background music with mute and volume controls
+- Local and S3-backed game library loading without app restart
+- Mock mode support for local development without AWS dependencies
+
+---
+
+## Local app flow
+
+Players can:
+
+1. Open the portal at http://localhost:3000
+2. See a daily problem or challenge
+3. Browse featured, all, and kid-made games
+4. Add a few ideas in the chat
+5. Press Create My Game when ready
+6. Play the generated game in a new browser tab
+
+The app supports both a lightweight mock flow and a real Bedrock-backed deployment flow.
 
 ---
 
 ## Architecture
 
 ```
-Browser (localhost:3000)
-  public/index.html + portal.js
-         |
-         | HTTP
-         v
-  Express Server  (server/index.js)
-    GET  /api/portal/problem   problem of the day
-    GET  /api/portal/games     game library
-    POST /api/portal/idea      submit game idea
-    GET  /api/health           health check
-         |                          |
-    USE_MOCK=true            USE_MOCK=false
-         |                          |
-   mockAgentService      bedrockAgentService
-   (no AWS needed)            |          |
-                       KidsGamePortal  GameGenie
-                       Bedrock Agent   Bedrock Agent
-                       (portal UX)     (game brain)
+Browser
+  public/index.html + public/js/portal.js + public/css/portal.css
+       |
+       | HTTP
+       v
+Express server (server/index.js)
+  - serves the portal UI
+  - exposes /api/portal routes
+  - serves local game files and S3-backed game libraries
+  - refreshes runtime config without restarting the app
+       |
+       +--> mockAgentService (local mock mode)
+       +--> bedrockAgentService (AWS Bedrock mode)
 ```
 
 ---
 
-## Project Structure
+## Key feature updates
+
+### Kid chat experience
+- The main chat box accepts multiple idea entries before final game creation.
+- Enter sends the message while Shift+Enter allows a newline.
+- A Clear action resets the chat and restores a clean page state.
+- Startup now clears stale persisted conversation data so the page opens fresh.
+
+### Theme and UI polish
+- Day and night mode are available from the header controls.
+- All major page surfaces follow the selected theme consistently.
+- The UI uses a modern, soft-panel aesthetic inspired by a WhatsApp-style chat layout.
+
+### Music and sound
+- Background music uses a richer set of smooth, encouraging preset loops.
+- Music can be changed, muted, and volume-adjusted from the header.
+- Controls are placed in the header instead of as a floating panel, keeping the layout cleaner and more intentional.
+
+### Game library configuration
+- The app can load games from a configured local folder or an S3 URL.
+- The configured source can be updated and reloaded without restarting the app.
+- Browser cache headers help the app refresh the latest front-end changes.
+
+---
+
+## Project structure
 
 ```
 GameGenie/
 ├── agents/
-│   ├── game-genie/                   GameGenie AI brain
-│   │   ├── agent-config.json         Agent definition and instructions
-│   │   ├── actions/action-group.json GenerateGame, AddGameToLibrary, GetGameLibrary
-│   │   └── prompts/system-prompt.md  Prompt templates
-│   └── kids-game-portal/             KidsGamePortal frontend agent
-│       ├── agent-config.json         Agent definition and instructions
-│       ├── actions/action-group.json GetProblemOfTheDay, GetFeaturedGames, SubmitGameIdea
-│       └── prompts/system-prompt.md  Kid-friendly prompt templates
-├── server/
-│   ├── index.js                      Express entry point, port 3000
-│   ├── routes/portal.js              /api/portal/* route handlers
-│   └── services/
-│       ├── mockAgentService.js       Local mock, no AWS needed
-│       └── bedrockAgentService.js    Real AWS Bedrock agent calls
+│   ├── game-genie/
+│   │   ├── agent-config.json
+│   │   ├── .agent.md
+│   │   ├── .instructions.md
+│   │   ├── actions/
+│   │   └── prompts/
+│   └── kids-game-portal/
+│       ├── agent-config.json
+│       ├── .agent.md
+│       ├── .instructions.md
+│       ├── actions/
+│       └── prompts/
 ├── public/
-│   ├── index.html                    Kids portal UI
-│   ├── css/portal.css                Space-themed dark design
-│   └── js/portal.js                  Frontend logic
+│   ├── index.html
+│   ├── css/portal.css
+│   ├── js/portal.js
+│   └── games/
+├── server/
+│   ├── index.js
+│   ├── routes/
+│   └── services/
 ├── infrastructure/
 │   └── cloudformation/
-│       └── bedrock-agent.yaml        CloudFormation for both agents
 ├── scripts/
-│   ├── test-agent.js                 Config validation (npm test)
-│   ├── deploy.js                     CloudFormation deploy
-│   └── agent-utils.js                update/prepare/alias/backup agents
-├── tests/agent.test.js               Jest tests
-├── docs/                             Documentation
-├── .github/workflows/deploy.yml      CI/CD pipeline
-├── .env.local                        Local dev - USE_MOCK_AGENTS=true
-├── .env.dev                          Dev AWS environment
-└── .env.prod                         Prod AWS environment
+│   ├── test-agent.js
+│   ├── deploy.js
+│   └── agent-utils.js
+├── tests/
+├── docs/
+├── AGENTS.md
+├── copilot-instructions.md
+├── package.json
+├── .env.local
+├── .env.dev
+├── .env.staging
+├── .env.prod
+├── README.md
+└── LICENSE
 ```
 
 ---
 
-## Quick Start - Run Locally
+## Quick start
 
 ### Prerequisites
-- Node.js 18+ (tested on v24)
+- Node.js 18 or later
 - npm
 
-### Steps
+### Install and run
 
 ```bash
-git clone https://github.com/kbvnkishore/GameGenie.git
-cd GameGenie
 npm install
 npm start
 ```
 
-Open **http://localhost:3000**
+Then open:
 
-No AWS account needed. Runs in mock mode by default (`USE_MOCK_AGENTS=true` in `.env.local`).
+```text
+http://localhost:3000
+```
+
+For local mock mode, the app uses the configured local environment file and does not need AWS access.
 
 ```bash
-npm run dev   # auto-restart on file changes
+npm run dev
 ```
 
 ---
 
-## API Endpoints
+## Environment variables
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/health` | Health check and current mode |
-| GET | `/api/portal/problem` | Problem of the day |
-| GET | `/api/portal/games?limit=6` | Featured game library |
-| GET | `/api/portal/games?all=true` | All games including kid-created |
-| POST | `/api/portal/idea` | Submit idea, returns game link |
+The project reads environment-specific files dynamically:
 
-### POST `/api/portal/idea`
+- .env.local
+- .env.dev
+- .env.staging
+- .env.prod
 
-Request:
-```json
-{ "ideaText": "A game where a cat collects fish", "sessionId": "session-abc123" }
-```
-
-Response:
-```json
-{
-  "success": true,
-  "gameId": "uuid",
-  "title": "Turbo Quest",
-  "url": "https://...",
-  "emoji": "game",
-  "message": "Wow! Your idea has been turned into a game!"
-}
-```
-
----
-
-## Environment Variables
-
-| File | Purpose |
-|------|---------|
-| `.env.local` | Local dev, mock agents, no AWS |
-| `.env.dev` | Dev AWS environment |
-| `.env.staging` | Staging AWS environment |
-| `.env.prod` | Production AWS environment |
+Example values:
 
 ```bash
 NODE_ENV=local
 PORT=3000
-USE_MOCK_AGENTS=true          # true = local mock, false = real AWS Bedrock
-
-AWS_REGION=us-east-1
-GAME_GENIE_AGENT_ID=          # from AWS Bedrock console
-GAME_GENIE_AGENT_ALIAS_ID=    # from CloudFormation output
-KIDS_PORTAL_AGENT_ID=         # from AWS Bedrock console
-KIDS_PORTAL_AGENT_ALIAS_ID=   # from CloudFormation output
-AGENT_ROLE_ARN=               # from CloudFormation output
-CONFIG_BUCKET=                # S3 bucket for config backups
+USE_MOCK_AGENTS=true
+GAME_LIBRARY_LOCAL_PATH=C:/GameGenie/public/games
 ```
 
-> **Security**: Never commit credentials or agent IDs to Git.
-> Always inject them as runtime environment variables.
+For AWS-backed mode, additional Bedrock settings can be supplied at runtime.
 
 ---
 
-## AWS Bedrock Agents
-
-### Agent 1 - GameGenie (AI brain)
-- **Purpose**: Processes game ideas, generates playable games, manages the library
-- **Config**: `agents/game-genie/agent-config.json`
-- **Actions**: `GenerateGame`, `AddGameToLibrary`, `GetGameLibrary`, `GetGameById`
-- **Model**: Claude 3 Sonnet
-
-### Agent 2 - KidsGamePortal (website face)
-- **Purpose**: Kid interaction, daily problems, game list, safe chat
-- **Config**: `agents/kids-game-portal/agent-config.json`
-- **Actions**: `GetProblemOfTheDay`, `GetFeaturedGames`, `SubmitGameIdea`, `GetCreatedGameLink`
-- **Model**: Claude 3 Sonnet
-
----
-
-## Deploy to AWS
+## Validation
 
 ```bash
-# 1. Validate configs
 npm test
-
-# 2. Deploy CloudFormation stack
-npm run deploy:dev
-
-# 3. Get Agent IDs from AWS console
-aws cloudformation describe-stacks --stack-name gamegenie-agent-dev --query "Stacks[0].Outputs"
-
-# 4. Test against real AWS (inject IDs at runtime - never in files)
-$env:USE_MOCK_AGENTS="false"
-$env:GAME_GENIE_AGENT_ID="YOUR_ID"
-$env:GAME_GENIE_AGENT_ALIAS_ID="YOUR_ALIAS"
-$env:AWS_ACCESS_KEY_ID="YOUR_KEY"
-$env:AWS_SECRET_ACCESS_KEY="YOUR_SECRET"
-NODE_ENV=dev node server/index.js
-
-# 5. Update agent after config changes
-node scripts/agent-utils.js update AGENT_ID game-genie
 ```
+
+This validates the agent configuration, prompt files, and deployment metadata before running in AWS or local mock mode.
 
 ---
 
-## Version Control Workflow
+## Notes
 
-```bash
-npm test && npm start                              # test locally
-git add . && git commit -m "describe change"
-git push origin main                               # triggers CI/CD
-node scripts/agent-utils.js update AGENT_ID game-genie  # sync AWS agent
-```
+This project is designed for kids and learning experiences. It keeps content age-appropriate, playful, and encouraging while still supporting real agent-based game generation workflows.
 
----
-
-## Scripts
-
-```bash
-npm test                                    # validate all agent configs
-npm start                                   # start server (mock mode)
-npm run dev                                 # start with nodemon
-npm run deploy:dev                          # deploy to dev
-npm run deploy:prod                         # deploy to prod
-
-node scripts/agent-utils.js update  ID name  # update AWS agent from local config
-node scripts/agent-utils.js prepare ID        # prepare agent after changes
-node scripts/agent-utils.js alias   ID name   # create version alias
-node scripts/agent-utils.js versions ID       # list versions
-node scripts/agent-utils.js backup  name      # backup config to S3
-```
-
----
 
 ## CI/CD
 

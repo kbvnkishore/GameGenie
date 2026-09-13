@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Happy Rainbow Pop! 🎈✨</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #ui-panel {
+      position: absolute;
+      top: 15px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 12px 25px;
+      border-radius: 25px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      z-index: 10;
+      font-size: 18px;
+      font-weight: bold;
+      color: #4a4a4a;
+    }
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      color: #555;
+    }
+    input[type=range] {
+      cursor: pointer;
+      width: 90px;
+    }
+    #game-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    .pop-item {
+      position: absolute;
+      font-size: 65px;
+      cursor: pointer;
+      animation-name: floatUp;
+      animation-timing-function: linear;
+      animation-fill-mode: forwards;
+      transition: transform 0.1s ease;
+    }
+    .pop-item:active {
+      transform: scale(1.2);
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(105vh); opacity: 1; }
+      100% { transform: translateY(-120px); opacity: 0.9; }
+    }
+    #start-screen, #end-screen {
+      position: absolute;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      text-align: center;
+    }
+    h1 {
+      font-size: 42px;
+      color: #ff6b6b;
+      margin-bottom: 10px;
+    }
+    p {
+      font-size: 20px;
+      color: #666;
+      margin-bottom: 25px;
+    }
+    button {
+      background: #ff6b6b;
+      color: white;
+      border: none;
+      padding: 15px 35px;
+      font-size: 22px;
+      font-weight: bold;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 6px 15px rgba(255, 107, 107, 0.4);
+      transition: all 0.2s ease;
+    }
+    button:hover {
+      transform: translateY(-3px) scale(1.05);
+      background: #ff5252;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="ui-panel">
+    <div>Score: <span id="score" style="color: #ff6b6b;">0</span></div>
+    <div>Time: <span id="time" style="color: #4ecdc4;">30</span>s</div>
+    <div class="speed-control">
+      <span>🐢 Speed:</span>
+      <input type="range" id="speedSlider" min="1" max="5" value="2">
+      <span>🚀</span>
+    </div>
+  </div>
+
+  <div id="game-container"></div>
+
+  <!-- Start Screen -->
+  <div id="start-screen">
+    <h1>Rainbow Pop Party! 🎈⭐</h1>
+    <p>Pop the floating items at your own easy pace with fun tunes!</p>
+    <button onclick="startGame()">Play Now! 🎉</button>
+  </div>
+
+  <!-- End Screen -->
+  <div id="end-screen" style="display: none;">
+    <h1 id="end-title">Awesome Job! 🌟</h1>
+    <p id="end-msg">You popped so many bright stars!</p>
+    <button onclick="startGame()">Play Again 🔄</button>
+  </div>
+
+  <script>
+    const items = ['🎈', '⭐', '🌈', '🦄', '💖', '🎨', '✨'];
+    let score = 0;
+    let timeLeft = 30;
+    let gameInterval, spawnInterval, musicInterval;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // Funny pitch-bending pop sound
+    function playPopSound() {
+      if (!audioCtx) return;
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      const randomStartFreq = 300 + Math.random() * 400;
+      const endFreq = randomStartFreq + 500;
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(randomStartFreq, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(endFreq, audioCtx.currentTime + 0.12);
+
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.12);
+    }
+
+    // Upbeat happy background melody loop
+    const melodyNotes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 349.23, 440.00];
+    let noteIndex = 0;
+
+    function playMusicStep() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.value = melodyNotes[noteIndex];
+
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.25);
+
+      noteIndex = (noteIndex + 1) % melodyNotes.length;
+    }
+
+    function startBackgroundMusic() {
+      noteIndex = 0;
+      clearInterval(musicInterval);
+      musicInterval = setInterval(playMusicStep, 300);
+    }
+
+    function stopBackgroundMusic() {
+      clearInterval(musicInterval);
+    }
+
+    function startGame() {
+      initAudio();
+      startBackgroundMusic();
+
+      score = 0;
+      timeLeft = 30;
+      document.getElementById('score').innerText = score;
+      document.getElementById('time').innerText = timeLeft;
+      document.getElementById('start-screen').style.display = 'none';
+      document.getElementById('end-screen').style.display = 'none';
+      document.getElementById('game-container').innerHTML = '';
+
+      clearInterval(gameInterval);
+      clearInterval(spawnInterval);
+
+      gameInterval = setInterval(updateTimer, 1000);
+      spawnInterval = setInterval(spawnItem, 900);
+    }
+
+    function spawnItem() {
+      const container = document.getElementById('game-container');
+      const item = document.createElement('div');
+      item.className = 'pop-item';
+      item.innerText = items[Math.floor(Math.random() * items.length)];
+      
+      const startX = Math.random() * (window.innerWidth - 80);
+      item.style.left = Math.max(10, startX) + 'px';
+      
+      const speedSetting = parseInt(document.getElementById('speedSlider').value);
+      const duration = (12 - (speedSetting * 1.5)) + (Math.random() * 1.5);
+      item.style.animationDuration = duration + 's';
+
+      item.onclick = function() {
+        playPopSound();
+        score += 10;
+        document.getElementById('score').innerText = score;
+        createPopEffect(item.offsetLeft, item.offsetTop);
+        item.remove();
+      };
+
+      container.appendChild(item);
+
+      setTimeout(() => { if (item.parentNode) item.remove(); }, duration * 1000);
+    }
+
+    function createPopEffect(x, y) {
+      const effect = document.createElement('div');
+      effect.innerText = '✨';
+      effect.style.position = 'absolute';
+      effect.style.left = x + 'px';
+      effect.style.top = y + 'px';
+      effect.style.fontSize = '40px';
+      effect.style.zIndex = '15';
+      document.getElementById('game-container').appendChild(effect);
+      setTimeout(() => effect.remove(), 300);
+    }
+
+    function updateTimer() {
+      timeLeft--;
+      document.getElementById('time').innerText = timeLeft;
+      if (timeLeft <= 0) {
+        endGame();
+      }
+    }
+
+    function endGame() {
+      stopBackgroundMusic();
+      clearInterval(gameInterval);
+      clearInterval(spawnInterval);
+      document.getElementById('end-screen').style.display = 'flex';
+      document.getElementById('end-title').innerText = `You Scored ${score} Points! 🎉`;
+      
+      if (score >= 120) {
+        document.getElementById('end-msg').innerText = "Super Star Player! Amazing job! 🌈✨";
+      } else {
+        document.getElementById('end-msg').innerText = "Wonderful job popping! So much fun! 🎈";
+      }
+    }
+  </script>
+</body>
+</html>
